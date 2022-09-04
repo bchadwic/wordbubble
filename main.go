@@ -16,7 +16,7 @@ func main() {
 
 	http.HandleFunc("/signup", app.Signup)
 	http.HandleFunc("/login", app.Login)
-	http.HandleFunc("/latest", app.Latest)
+	http.HandleFunc("/push", app.Push)
 
 	app.logger.Info("starting server on port %s", port)
 	err := http.ListenAndServe(port, nil)

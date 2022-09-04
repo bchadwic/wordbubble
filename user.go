@@ -25,6 +25,7 @@ type User struct {
 type Users interface {
 	AddUser(logger Logger, user *User) error
 	GenerateToken(logger Logger, user *User) (string, error)
+	ValidateToken(logger Logger, user *User) error
 	AuthenticateUser(logger Logger, user *User) bool
 	ValidPassword(logger Logger, password string) error
 	ValidUser(logger Logger, user *User) error
@@ -159,7 +160,6 @@ func (users *users) ValidPassword(logger Logger, password string) error {
 // error is safe to return to consumer as a response message
 func (users *users) ValidUser(logger Logger, user *User) error {
 	username, email := user.Username, user.Email
-	logger.Info("username is %s", username)
 
 	// validation
 	if _, err := mail.ParseAddress(email); err != nil {
@@ -172,6 +172,12 @@ func (users *users) ValidUser(logger Logger, user *User) error {
 		return fmt.Errorf("no one needs a username this long")
 	} else if len(username) == 0 {
 		return fmt.Errorf("a username is required")
+	}
+	for _, c := range username {
+		if unicode.IsLetter(c) || unicode.IsNumber(c) || c == '_' {
+			continue
+		}
+		return fmt.Errorf("username must only consist of letters, numbers, or '_'")
 	}
 
 	// lookups

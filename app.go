@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"io"
+	"fmt"
 	"net/http"
 	"strings"
 )
@@ -16,7 +16,7 @@ func (app *App) Signup(w http.ResponseWriter, r *http.Request) {
 	app.logger.Info("app.Signup: handling request")
 
 	if r.Method != http.MethodPost {
-		app.logger.Warn("app.Signup: invalid http method %s", r.Method)
+		app.logger.Error("app.Signup: invalid http method %s", r.Method)
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(`invalid http method`))
 		return // return since Signup is only for posting a new user
@@ -70,7 +70,7 @@ func (app *App) Login(w http.ResponseWriter, r *http.Request) {
 	app.logger.Info("app.Login: handling request")
 
 	if r.Method != http.MethodPost {
-		app.logger.Warn("app.Login: invalid http method %s", r.Method)
+		app.logger.Error("app.Login: invalid http method %s", r.Method)
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(`invalid http method`))
 		return // return since login requires a body with credentials
@@ -106,12 +106,34 @@ func (app *App) Login(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(token)) // twas a success
 }
 
-func (app *App) Latest(w http.ResponseWriter, r *http.Request) {
-	app.logger.Info("calling login")
-	if r.Method == http.MethodGet {
-		app.logger.Info("method was a get!!")
-	} else if r.Method == http.MethodPost {
-		app.logger.Info("method was a post!!")
+func (app *App) Push(w http.ResponseWriter, r *http.Request) {
+	app.logger.Info("app.Push: handling request")
+
+	if r.Method != http.MethodPost {
+		app.logger.Error("app.Push: invalid http method %s", r.Method)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(`invalid http method`))
+		return // return since login requires a body with credentials
 	}
-	io.WriteString(w, "Hi!")
+
+	authValue := r.Header.Get("authorization")
+	if authValue == "" {
+		app.logger.Error("app.Push: authorization was not passed")
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte(`authorization header is required for pushing a wordbubble`))
+		return // return since user is not authenticated
+	}
+
+	splitToken := strings.Split(authValue, "Bearer ")
+	if len(splitToken) < 2 {
+		app.logger.Error("app.Push: authorization value didn't specifiy token type as Bearer")
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte(`a bearer token is required for pushing a wordbubble`))
+		return // return since user is still not authenticated
+	}
+
+	token := splitToken[1]
+	app.logger.Info("app.Push: wohooo")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(fmt.Sprintf(`you did it!! %s`, token)))
 }
