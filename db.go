@@ -5,6 +5,7 @@ import "fmt"
 type DB interface {
 	AddUser(logger Logger, user *User) error
 	GetUserFromUsername(logger Logger, username string) (*User, error)
+	GetUserFromEmail(logger Logger, email string) (*User, error)
 }
 
 type db struct {
@@ -33,4 +34,16 @@ func (db *db) GetUserFromUsername(logger Logger, username string) (*User, error)
 	}
 	logger.Info("db.GetUserFromUsername: successfully found %s in the database", username)
 	return user, nil
+}
+
+func (db *db) GetUserFromEmail(logger Logger, email string) (*User, error) {
+	logger.Info("db.GetUserFromEmail: retrieving user by email %s", email)
+	for _, v := range db.users {
+		if v.Email == email {
+			logger.Info("db.GetUserFromEmail: successfully found %s in the database", email)
+			return v, nil
+		}
+	}
+	logger.Error("db.GetUserFromUsername: could not find user with email %s", email)
+	return nil, fmt.Errorf("could not find user")
 }

@@ -14,7 +14,7 @@ func main() {
 		users:  NewUsersService(os.Getenv("WB_SIGNING_KEY")),
 	}
 
-	http.HandleFunc("/signup", app.SignUp)
+	http.HandleFunc("/signup", app.Signup)
 	http.HandleFunc("/login", app.Login)
 	http.HandleFunc("/latest", app.Latest)
 

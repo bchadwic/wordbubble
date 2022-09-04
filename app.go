@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 )
 
 type App struct {
@@ -11,48 +12,56 @@ type App struct {
 	users  Users
 }
 
-func (app *App) SignUp(w http.ResponseWriter, r *http.Request) {
-	app.logger.Info("app.SignUp: handling request")
+func (app *App) Signup(w http.ResponseWriter, r *http.Request) {
+	app.logger.Info("app.Signup: handling request")
 
 	if r.Method != http.MethodPost {
-		app.logger.Warn("app.SignUp: invalid http method %s", r.Method)
+		app.logger.Warn("app.Signup: invalid http method %s", r.Method)
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(`invalid http method`))
-		return // return since signup is only for posting a new user
+		return // return since Signup is only for posting a new user
 	}
 
 	var user User
 	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
-		app.logger.Error("app.SignUp: could not decode user from body %s", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`internal error occurred, could not retrieve user from request body`))
+		app.logger.Error("app.Signup: could not decode user from body %s", err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(`could not retrieve user from request body`))
 		return // could not parse a user from the request body
 	}
 
-	if !app.users.ValidPassword(user.Password) {
-		app.logger.Error("app.SignUp: password complexity did not meet standard")
+	if err := app.users.ValidPassword(app.logger, user.Password); err != nil {
+		app.logger.Error("app.Signup: password complexity did not meet standard, %s", err)
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(`password complexity is not sufficent, 1 upper case, 1 number, and >6 characters`))
+		w.Write([]byte(err.Error()))
 		return // password complexity didn't match 1 upper case, 1 number and >6 characters
 	}
 
+	user.Username = strings.Trim(user.Username, " ")
+	if err := app.users.ValidUser(app.logger, &user); err != nil {
+		app.logger.Error("app.Signup: could not add user, %s", err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
+		return // either the username was taken, the email / username is invalid, or an account with this email exists
+	}
+
 	if err := app.users.AddUser(app.logger, &user); err != nil {
-		app.logger.Error("app.SignUp: an error occurred inserting new user %s", err)
+		app.logger.Error("app.Signup: an error occurred inserting new user %s", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(`internal error occurred, could not insert new user`))
 		return // could not add a new user in the service or repository layer
 	}
 
-	app.logger.Info("app.SignUp: user %s created, returning token", user.Username)
+	app.logger.Info("app.Signup: user %s created, returning token", user.Username)
 	token, err := app.users.GenerateToken(app.logger, &user)
 	if err != nil {
-		app.logger.Error("app.SignUp: an error occurred generating token %s", err)
+		app.logger.Error("app.Signup: an error occurred generating token %s", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(`internal error occurred, user has been inserted but could not generate token`))
 		return // after adding the user, could not generate a token
 	}
 
-	app.logger.Info("app.SignUp: generated token was successful, sending back token response")
+	app.logger.Info("app.Signup: generated token was successful, sending back token response")
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte(token)) // huzzah, another user added
 }
@@ -71,10 +80,11 @@ func (app *App) Login(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
 		app.logger.Error("app.Login: could not decode user from body %s", err)
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`internal error occurred, could not retrieve user from request body`))
+		w.Write([]byte(`could not retrieve user from request body`))
 		return // could not parse a user from the request body
 	}
 
+	user.Username = strings.Trim(user.Username, " ")
 	if ok := app.users.AuthenticateUser(app.logger, &user); !ok {
 		app.logger.Error("app.Login: could not authenticate user")
 		w.WriteHeader(http.StatusUnauthorized)
