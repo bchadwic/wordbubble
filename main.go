@@ -10,12 +10,13 @@ func main() {
 	port := ":8080"
 
 	app := &App{
-		logger: NewLogger(os.Getenv("WB_LOG_LEVEL")),
-		users:  NewUsersService(os.Getenv("WB_SIGNING_KEY")),
+		NewLogger(os.Getenv("WB_LOG_LEVEL")),
+		NewAuth(os.Getenv("WB_SIGNING_KEY")),
+		NewUsersService(),
 	}
 
-	http.HandleFunc("/signup", app.Signup)
-	http.HandleFunc("/login", app.Login)
+	http.HandleFunc("/register", app.Register)
+	http.HandleFunc("/token", app.Token)
 	http.HandleFunc("/push", app.Push)
 
 	app.logger.Info("starting server on port %s", port)

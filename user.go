@@ -3,17 +3,9 @@ package main
 import (
 	"fmt"
 	"net/mail"
-	"time"
 	"unicode"
 
-	"github.com/golang-jwt/jwt"
 	"golang.org/x/crypto/bcrypt"
-)
-
-const (
-	minPasswordLength = 6
-	maxUsernameLength = 40
-	maxEmailLength    = 320
 )
 
 type User struct {
@@ -24,29 +16,17 @@ type User struct {
 
 type Users interface {
 	AddUser(logger Logger, user *User) error
-	GenerateToken(logger Logger, user *User) (string, error)
-	ValidateToken(logger Logger, user *User) error
 	AuthenticateUser(logger Logger, user *User) bool
 	ValidPassword(logger Logger, password string) error
 	ValidUser(logger Logger, user *User) error
 }
 
 type users struct {
-	db         DB
-	signingKey string
+	db DB
 }
 
-type tokenClaims struct {
-	jwt.StandardClaims
-	Username string `json:"username"`
-	Email    string `json:"email"`
-}
-
-func NewUsersService(signingKey string) *users {
-	return &users{
-		db:         NewDB(),
-		signingKey: signingKey,
-	}
+func NewUsersService() *users {
+	return &users{NewDB()}
 }
 
 func (users *users) AddUser(logger Logger, user *User) error {
@@ -64,24 +44,8 @@ func (users *users) AddUser(logger Logger, user *User) error {
 	return users.db.AddUser(logger, user)
 }
 
-func (users *users) GenerateToken(logger Logger, user *User) (string, error) {
-	logger.Info("users.GenerateToken: generating token for %s", user.Username)
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &tokenClaims{
-		jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(12 * time.Hour).Unix(),
-			IssuedAt:  time.Now().Unix(),
-		},
-		user.Username,
-		user.Email,
-	}) // constructing payload of the jwt token before signing
-
-	logger.Info("users.GenerateToken: successfully generated token for %s", user.Username)
-	return token.SignedString([]byte(users.signingKey))
-}
-
 func (users *users) AuthenticateUser(logger Logger, user *User) bool {
-	logger.Info("users.AuthenticateUser: verifying %s login credentials", user.Username)
+	logger.Info("users.AuthenticateUser: verifying %s Token credentials", user.Username)
 
 	dbUser, err := users.db.GetUserFromUsername(logger, user.Username)
 	if err != nil {
