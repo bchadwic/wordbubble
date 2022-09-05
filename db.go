@@ -114,8 +114,7 @@ func (ds *datasource) GetAuthenticatedUserFromUsername(logger Logger, user *User
 		return nil, fmt.Errorf("could not find user with username %s", user.Username)
 	}
 	var dbUser User
-	row.Scan(&user.UserId, &user.Username, &user.Email, &user.Password)
-	fmt.Println("PASSWORD: ", dbUser.Password)
+	row.Scan(&dbUser.UserId, &dbUser.Username, &dbUser.Email, &dbUser.Password)
 	logger.Info("db.GetUserFromUsername: successfully found %s in the database", dbUser.Username)
 	return &dbUser, nil
 }

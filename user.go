@@ -61,9 +61,6 @@ func (users *users) AuthenticateUser(logger Logger, user *User) bool {
 		logger.Error("users.AuthenticateUser: could not retrieve user from database %s", err)
 		return false // could not find the user by username
 	}
-	logger.Info("users.AuthenitcateUser: password encrypted %s", user.Password)
-
-	logger.Info("users.AuthenitcateUser: dbUser password %s, user passed: %s", dbUser.Password, user.Password)
 	if err := bcrypt.CompareHashAndPassword([]byte(dbUser.Password), []byte(user.Password)); err != nil {
 		logger.Error("users.AuthenticateUser: password did not match hashed password %s", err)
 		return false // db password and the password passed did not match
