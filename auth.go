@@ -15,7 +15,7 @@ const (
 
 type Auth interface {
 	GenerateToken(logger Logger, user *User) (string, error)
-	ValidateToken(logger Logger, tokenStr string) error
+	ValidateTokenAndReceiveUsername(logger Logger, tokenStr string) (string, error)
 }
 
 type auth struct {
@@ -24,8 +24,8 @@ type auth struct {
 
 type tokenClaims struct {
 	jwt.StandardClaims
+	UserId   int64 `json:"user_id"`
 	Username string `json:"username"`
-	Email    string `json:"email"`
 }
 
 func NewAuth(signingKey string) *auth {
@@ -40,27 +40,27 @@ func (auth *auth) GenerateToken(logger Logger, user *User) (string, error) {
 			ExpiresAt: time.Now().Add(12 * time.Hour).Unix(),
 			IssuedAt:  time.Now().Unix(),
 		},
+		user.UserId,
 		user.Username,
-		user.Email,
 	}) // constructing payload of the jwt token before signing
 
 	logger.Info("users.GenerateToken: successfully generated token for %s", user.Username)
 	return token.SignedString([]byte(auth.signingKey))
 }
 
-func (auth *auth) ValidateToken(logger Logger, tokenStr string) error {
+func (auth *auth) ValidateTokenAndReceiveUsername(logger Logger, tokenStr string) (string, error) {
 	tokenClaims := &tokenClaims{}
 	token, err := jwt.ParseWithClaims(tokenStr, tokenClaims, func(t *jwt.Token) (interface{}, error) {
 		return []byte(auth.signingKey), nil
 	})
 	if err != nil {
 		if err == jwt.ErrSignatureInvalid {
-			return fmt.Errorf("token's signature was found to be invalid")
+			return "", fmt.Errorf("token's signature was found to be invalid")
 		}
-		return fmt.Errorf("could not parse the token sent to authorize")
+		return "", fmt.Errorf("could not parse the token sent to authorize")
 	}
 	if !token.Valid {
-		return fmt.Errorf("token is expired")
+		return "", fmt.Errorf("token is expired")
 	}
-	return nil
+	return tokenClaims.Username, nil
 }

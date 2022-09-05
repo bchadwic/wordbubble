@@ -9,6 +9,7 @@ import (
 )
 
 type User struct {
+	UserId   int64
 	Username string `json:"username"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
@@ -22,7 +23,7 @@ type Users interface {
 }
 
 type users struct {
-	db DB
+	db DataSource
 }
 
 func NewUsersService() *users {
@@ -32,8 +33,10 @@ func NewUsersService() *users {
 func (users *users) AddUser(logger Logger, user *User) error {
 	logger.Info("users.AddUser: inserting new user %s", user.Username)
 
+	logger.Info("users.AddUser: password unencrypted %s", user.Password)
 	var passwordBytes = []byte(user.Password)
 	hashedPasswordBytes, err := bcrypt.GenerateFromPassword(passwordBytes, bcrypt.DefaultCost)
+	logger.Info("users.AddUser: password encrypted %s", hashedPasswordBytes)
 	if err != nil {
 		logger.Error("users.AddUser: bcrypt error, could not add user %s", err)
 		return err // bcrypt err'd out, can't continue
@@ -41,24 +44,33 @@ func (users *users) AddUser(logger Logger, user *User) error {
 
 	user.Password = string(hashedPasswordBytes)
 	logger.Info("users.AddUser: successfully hashed password")
-	return users.db.AddUser(logger, user)
+	id, err := users.db.AddUser(logger, user)
+	if err != nil {
+		logger.Error("users.AddUser: could not add user %s", err)
+		return err
+	}
+	user.UserId = id
+	return nil
 }
 
 func (users *users) AuthenticateUser(logger Logger, user *User) bool {
 	logger.Info("users.AuthenticateUser: verifying %s Token credentials", user.Username)
 
-	dbUser, err := users.db.GetUserFromUsername(logger, user.Username)
+	dbUser, err := users.db.GetAuthenticatedUserFromUsername(logger, user)
 	if err != nil {
 		logger.Error("users.AuthenticateUser: could not retrieve user from database %s", err)
 		return false // could not find the user by username
 	}
+	logger.Info("users.AuthenitcateUser: password encrypted %s", user.Password)
 
+	logger.Info("users.AuthenitcateUser: dbUser password %s, user passed: %s", dbUser.Password, user.Password)
 	if err := bcrypt.CompareHashAndPassword([]byte(dbUser.Password), []byte(user.Password)); err != nil {
 		logger.Error("users.AuthenticateUser: password did not match hashed password %s", err)
 		return false // db password and the password passed did not match
 	}
 
 	logger.Info("users.AuthenticateUser: user %s is verified to be who they say they are", user.Username)
+	user.UserId = dbUser.UserId
 	return true // successfully authenticated
 }
 

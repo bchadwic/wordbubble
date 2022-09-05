@@ -13,6 +13,7 @@ func main() {
 		NewLogger(os.Getenv("WB_LOG_LEVEL")),
 		NewAuth(os.Getenv("WB_SIGNING_KEY")),
 		NewUsersService(),
+		NewWordBubblesService(),
 	}
 
 	http.HandleFunc("/register", app.Register)
