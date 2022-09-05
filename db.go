@@ -14,15 +14,15 @@ type DataSource interface {
 	GetUserFromEmail(logger Logger, email string) (*User, error)
 	GetAuthenticatedUserFromUsername(logger Logger, user *User) (*User, error)
 	// wordbubbles
-	AddNewWordBubble(logger Logger, username string, wb *WordBubble) error
-	NumberOfWordBubblesForUser(logger Logger, username string) (int, error)
+	AddNewWordBubble(logger Logger, userId int64, wb *WordBubble) error
+	NumberOfWordBubblesForUser(logger Logger, userId int64) (int64, error)
 }
 
 type datasource struct {
 	db *sql.DB
 }
 
-func NewDB() *datasource {
+func NewDataSource() *datasource {
 	panicker := func(err error) {
 		if err != nil {
 			panic(err)
@@ -72,6 +72,7 @@ func (ds *datasource) GetUserFromUsername(logger Logger, username string) (*User
 	if err != nil {
 		return nil, err
 	}
+	defer row.Close()
 	if !row.Next() {
 		return nil, fmt.Errorf("could not find user with username %s", username)
 	}
@@ -91,6 +92,7 @@ func (ds *datasource) GetUserFromEmail(logger Logger, email string) (*User, erro
 	if err != nil {
 		return nil, err
 	}
+	defer row.Close()
 	if !row.Next() {
 		return nil, fmt.Errorf("could not find user with email %s", email)
 	}
@@ -110,19 +112,57 @@ func (ds *datasource) GetAuthenticatedUserFromUsername(logger Logger, user *User
 	if err != nil {
 		return nil, err
 	}
+	defer row.Close()
 	if !row.Next() {
 		return nil, fmt.Errorf("could not find user with username %s", user.Username)
 	}
 	var dbUser User
-	row.Scan(&dbUser.UserId, &dbUser.Username, &dbUser.Email, &dbUser.Password)
+	if err := row.Scan(&dbUser.UserId, &dbUser.Username, &dbUser.Email, &dbUser.Password); err != nil {
+		return nil, fmt.Errorf("could not retrive user information for %s", user.Username)
+	}
 	logger.Info("db.GetUserFromUsername: successfully found %s in the database", dbUser.Username)
 	return &dbUser, nil
 }
 
-func (ds *datasource) AddNewWordBubble(logger Logger, username string, wb *WordBubble) error {
+func (ds *datasource) AddNewWordBubble(logger Logger, userId int64, wb *WordBubble) error {
+	logger.Info("db.AddNewWordBubble: creating wordbubble %+v for %d", wb, userId)
+	logger.Info("db.AddNewWordBubble: %+v ", ds.db.Stats())
+	stmt, err := ds.db.Prepare(`INSERT INTO wordbubbles (user_id, text) VALUES (?, ?)`)
+	if err != nil {
+		logger.Error("db.AddNewWordBubble: could not prepare statement: %s", err)
+		return err
+	}
+	_, err = stmt.Exec(userId, wb.Text)
+	if err != nil {
+		logger.Error("db.AddNewWordBubble: could not execute statement: %s", err)
+		return err
+	}
+	logger.Info("db.AddNewWordBubble: successfully added a new wordbubble for user %d", userId)
 	return nil
 }
 
-func (ds *datasource) NumberOfWordBubblesForUser(logger Logger, username string) (int, error) {
-	return 0, nil
+func (ds *datasource) NumberOfWordBubblesForUser(logger Logger, userId int64) (int64, error) {
+	logger.Info("db.NumberOfWordBubblesForUser: checking amount of wordbubbles for user %d", userId)
+	stmt, err := ds.db.Prepare(`SELECT COUNT(*) from wordbubbles WHERE user_id = ?`)
+	if err != nil {
+		logger.Error("db.AddNewWordBubble: could not prepare statement: %s", err)
+		return 0, err
+	}
+	row, err := stmt.Query(userId)
+	if err != nil {
+		logger.Error("db.AddNewWordBubble: could not execute statement: %s", err)
+		return 0, err
+	}
+	defer row.Close()
+	if !row.Next() {
+		logger.Error("db.AddNewWordBubble: could not find how many wordbubbles for user: %d", userId)
+		return 0, fmt.Errorf("an error occurred gathering the current amount of wordbubbles")
+	}
+	var amt int64
+	if err := row.Scan(&amt); err != nil {
+		logger.Error("db.AddNewWordBubble: could not find how many wordbubbles for user: %d", userId)
+		return 0, fmt.Errorf("an error occurred gathering the current amount of wordbubbles")
+	}
+	logger.Info("db.AddNewWordBubble: successfully added a new wordbubble for user %d", userId)
+	return amt, nil
 }

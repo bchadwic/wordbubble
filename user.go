@@ -23,11 +23,11 @@ type Users interface {
 }
 
 type users struct {
-	db DataSource
+	ds DataSource
 }
 
-func NewUsersService() *users {
-	return &users{NewDB()}
+func NewUsersService(ds DataSource) *users {
+	return &users{ds}
 }
 
 func (users *users) AddUser(logger Logger, user *User) error {
@@ -44,7 +44,7 @@ func (users *users) AddUser(logger Logger, user *User) error {
 
 	user.Password = string(hashedPasswordBytes)
 	logger.Info("users.AddUser: successfully hashed password")
-	id, err := users.db.AddUser(logger, user)
+	id, err := users.ds.AddUser(logger, user)
 	if err != nil {
 		logger.Error("users.AddUser: could not add user %s", err)
 		return err
@@ -56,7 +56,7 @@ func (users *users) AddUser(logger Logger, user *User) error {
 func (users *users) AuthenticateUser(logger Logger, user *User) bool {
 	logger.Info("users.AuthenticateUser: verifying %s Token credentials", user.Username)
 
-	dbUser, err := users.db.GetAuthenticatedUserFromUsername(logger, user)
+	dbUser, err := users.ds.GetAuthenticatedUserFromUsername(logger, user)
 	if err != nil {
 		logger.Error("users.AuthenticateUser: could not retrieve user from database %s", err)
 		return false // could not find the user by username
@@ -154,10 +154,10 @@ func (users *users) ValidUser(logger Logger, user *User) error {
 	}
 
 	// lookups
-	if _, err := users.db.GetUserFromEmail(logger, email); err == nil {
+	if _, err := users.ds.GetUserFromEmail(logger, email); err == nil {
 		return fmt.Errorf("a user already exists with this email")
 	}
-	if _, err := users.db.GetUserFromUsername(logger, username); err == nil {
+	if _, err := users.ds.GetUserFromUsername(logger, username); err == nil {
 		return fmt.Errorf("the user '%s' already exists", username)
 	}
 	return nil

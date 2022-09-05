@@ -9,11 +9,13 @@ import (
 func main() {
 	port := ":8080"
 
+	ds := NewDataSource()
+
 	app := &App{
 		NewLogger(os.Getenv("WB_LOG_LEVEL")),
 		NewAuth(os.Getenv("WB_SIGNING_KEY")),
-		NewUsersService(),
-		NewWordBubblesService(),
+		NewUsersService(ds),
+		NewWordBubblesService(ds),
 	}
 
 	http.HandleFunc("/register", app.Register)

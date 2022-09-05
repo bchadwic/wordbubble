@@ -111,7 +111,6 @@ func (app *App) Token(w http.ResponseWriter, r *http.Request) {
 
 func (app *App) Push(w http.ResponseWriter, r *http.Request) {
 	logger := app.logger
-	var err error
 	logger.Info("app.Push: handling request")
 
 	if r.Method != http.MethodPost {
@@ -120,6 +119,7 @@ func (app *App) Push(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`invalid http method`))
 		return // return since Token requires a body with credentials
 	}
+	logger.Debug("app.Push: method is POST")
 
 	authValue := r.Header.Get("authorization")
 	if authValue == "" {
@@ -128,6 +128,7 @@ func (app *App) Push(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`authorization header is required for pushing a wordbubble`))
 		return // return since user is not authenticated
 	}
+	logger.Debug("app.Push: user passed authorization in header")
 
 	splitToken := strings.Split(authValue, "Bearer ")
 	if len(splitToken) < 2 {
@@ -136,15 +137,17 @@ func (app *App) Push(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`a bearer token is required for pushing a wordbubble`))
 		return // return since user is still not authenticated
 	}
+	logger.Debug("app.Push: user passed a token of type bearer")
 
 	token := splitToken[1] // grab the token from the Bearer string
-	username, err := app.auth.ValidateTokenAndReceiveUsername(logger, token)
+	userId, err := app.auth.ValidateTokenAndReceiveId(logger, token)
 	if err != nil {
 		logger.Error("app.Push: token is invalid: %s", err)
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Write([]byte(err.Error()))
 		return // return since user is, again, still not authenticated
 	}
+	logger.Debug("app.Push: successfully parsed and validated token")
 
 	var wb WordBubble // finally we are authenticated! Let's insert a wordbubble
 	if err = json.NewDecoder(r.Body).Decode(&wb); err != nil {
@@ -153,6 +156,7 @@ func (app *App) Push(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`could not parse a wordbubble from request body`))
 		return // return since we couldn't parse the body
 	}
+	logger.Debug("app.Push: successfully parsed wordbubble from request body")
 
 	if err = app.wbs.ValidWordBubble(&wb); err != nil {
 		logger.Error("app.Push: wordbubble was not valid: %s", err)
@@ -160,20 +164,23 @@ func (app *App) Push(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(err.Error()))
 		return // return since the wordbubble wasn't valid
 	}
+	logger.Debug("app.Push: successfully validated wordbubble passed")
 
-	if err = app.wbs.UserHasAvailability(logger, username); err != nil {
+	if err = app.wbs.UserHasAvailability(logger, userId); err != nil {
 		logger.Error("app.Push: user doesn't have availability for another wb: %s", err)
 		w.WriteHeader(http.StatusConflict)
 		w.Write([]byte(err.Error()))
 		return // return user has exceeded the amount of available wordbubbles
 	}
+	logger.Debug("app.Push: %d has availablity", userId)
 
-	if err = app.wbs.AddNewWordBubble(logger, username, &wb); err != nil {
+	if err = app.wbs.AddNewWordBubble(logger, userId, &wb); err != nil {
 		logger.Error("app.Push: there was an error creating the wordbubble: %s", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
 		return // returning due to internal error
 	}
+	logger.Debug("app.Push: %d added a wordbubble", userId)
 
 	if wb.Text == "teapot" {
 		logger.Info("app.Push: found ourselves a teapot")
@@ -181,7 +188,7 @@ func (app *App) Push(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`here is some tea for you`))
 		return // return for obvious reasons
 	}
-	logger.Info("app.Push: successfully created a wordbubble for %s", username)
+	logger.Info("app.Push: successfully created a wordbubble for %d", userId)
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte("thank you!"))
 }
