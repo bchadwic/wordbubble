@@ -12,6 +12,7 @@ type WordBubbles interface {
 	AddNewWordBubble(logger Logger, userId int64, wb *WordBubble) error
 	ValidWordBubble(wb *WordBubble) error
 	UserHasAvailability(logger Logger, userId int64) error
+	RemoveAndReturnLatestWordBubbleForUser(logger Logger, userId int64) (*WordBubble, error)
 }
 
 type wordbubbles struct {
@@ -50,4 +51,8 @@ func (wbs *wordbubbles) ValidWordBubble(wb *WordBubble) error {
 		return fmt.Errorf("wordbubble sent is invalid, must be inbetween 1-255 characters, received %d", len)
 	}
 	return nil
+}
+
+func (wbs *wordbubbles) RemoveAndReturnLatestWordBubbleForUser(logger Logger, userId int64) (*WordBubble, error) {
+	return wbs.ds.RemoveAndReturnLatestWordBubbleForUser(logger, userId)
 }

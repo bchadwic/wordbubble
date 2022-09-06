@@ -188,7 +188,55 @@ func (app *App) Push(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`here is some tea for you`))
 		return // return for obvious reasons
 	}
+
 	logger.Info("app.Push: successfully created a wordbubble for %d", userId)
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte("thank you!"))
+}
+
+func (app *App) Pop(w http.ResponseWriter, r *http.Request) {
+	logger := app.logger
+
+	if r.Method != http.MethodDelete {
+		logger.Error("app.Pop: invalid http method: %s", r.Method)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(`invalid http method`))
+		return // return since pop is a delete operation
+	}
+
+	var identity struct {
+		UserStr string `json:"user"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&identity); err != nil {
+		logger.Error("app.Pop: could not decode identity from body: %s", err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(`could not parse a user from request body`))
+		return // return since we couldn't parse the body
+	}
+
+	userId, err := app.users.ResolveUserIdFromValue(logger, identity.UserStr)
+	if err != nil {
+		logger.Error("app.Pop: an error occurred resolving the identity of %s: %s", identity.UserStr, err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
+		return // return since we couldn't find who we were asking for
+	}
+
+	wordbubble, err := app.wbs.RemoveAndReturnLatestWordBubbleForUser(logger, userId)
+	if err != nil {
+		logger.Error("app.Pop: an error occurred removing and return the latest wordbubble for %d: %s", userId, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return // return since we had an internal error trying to pop
+	}
+
+	if wordbubble == nil {
+		logger.Warn("app.Pop: no wordbubble was found for user %d", userId)
+		w.WriteHeader(http.StatusNoContent)
+		return // return with no content since we had nothing to delete
+	}
+
+	logger.Info("app.Pop: successfully popped a wordbubble for %d", userId)
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(wordbubble.Text))
 }

@@ -21,6 +21,7 @@ func main() {
 	http.HandleFunc("/register", app.Register)
 	http.HandleFunc("/token", app.Token)
 	http.HandleFunc("/push", app.Push)
+	http.HandleFunc("/pop", app.Pop)
 
 	app.logger.Info("starting server on port %s", port)
 	err := http.ListenAndServe(port, nil)

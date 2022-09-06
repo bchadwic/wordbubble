@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/mail"
+	"strings"
 	"unicode"
 
 	"golang.org/x/crypto/bcrypt"
@@ -18,6 +19,7 @@ type User struct {
 type Users interface {
 	AddUser(logger Logger, user *User) error
 	AuthenticateUser(logger Logger, user *User) bool
+	ResolveUserIdFromValue(logger Logger, userStr string) (int64, error)
 	ValidPassword(logger Logger, password string) error
 	ValidUser(logger Logger, user *User) error
 }
@@ -69,6 +71,18 @@ func (users *users) AuthenticateUser(logger Logger, user *User) bool {
 	logger.Info("users.AuthenticateUser: user %s is verified to be who they say they are", user.Username)
 	user.UserId = dbUser.UserId
 	return true // successfully authenticated
+}
+
+// resolves a userId from either a username or an email
+func (users *users) ResolveUserIdFromValue(logger Logger, userStr string) (int64, error) {
+	if strings.ContainsRune(userStr, '@') {
+		// TODO validate that this is a valid email before reaching out to datasource
+		logger.Info("users.ResolveUserIdFromValue: string passed is likely to be an email: %s", userStr)
+		return users.ds.ResolveUserIdFromEmail(logger, userStr)
+	}
+	// TODO validate that this is a valid username before reaching out to datasource
+	logger.Info("users.ResolveUserIdFromValue: string passed is likely to be an username: %s", userStr)
+	return users.ds.ResolveUserIdFromUsername(logger, userStr)
 }
 
 // validate password based on the 6 characters, 1 upper, 1 lower, 1 number, 1 special character
