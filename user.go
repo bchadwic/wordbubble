@@ -3,20 +3,14 @@ package main
 import (
 	"fmt"
 	"net/mail"
-	"time"
+	"strings"
 	"unicode"
 
-	"github.com/golang-jwt/jwt"
 	"golang.org/x/crypto/bcrypt"
 )
 
-const (
-	minPasswordLength = 6
-	maxUsernameLength = 40
-	maxEmailLength    = 320
-)
-
 type User struct {
+	UserId   int64
 	Username string `json:"username"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
@@ -24,35 +18,27 @@ type User struct {
 
 type Users interface {
 	AddUser(logger Logger, user *User) error
-	GenerateToken(logger Logger, user *User) (string, error)
 	AuthenticateUser(logger Logger, user *User) bool
+	ResolveUserIdFromValue(logger Logger, userStr string) (int64, error)
 	ValidPassword(logger Logger, password string) error
 	ValidUser(logger Logger, user *User) error
 }
 
 type users struct {
-	db         DB
-	signingKey string
+	ds DataSource
 }
 
-type tokenClaims struct {
-	jwt.StandardClaims
-	Username string `json:"username"`
-	Email    string `json:"email"`
-}
-
-func NewUsersService(signingKey string) *users {
-	return &users{
-		db:         NewDB(),
-		signingKey: signingKey,
-	}
+func NewUsersService(ds DataSource) *users {
+	return &users{ds}
 }
 
 func (users *users) AddUser(logger Logger, user *User) error {
 	logger.Info("users.AddUser: inserting new user %s", user.Username)
 
+	logger.Info("users.AddUser: password unencrypted %s", user.Password)
 	var passwordBytes = []byte(user.Password)
 	hashedPasswordBytes, err := bcrypt.GenerateFromPassword(passwordBytes, bcrypt.DefaultCost)
+	logger.Info("users.AddUser: password encrypted %s", hashedPasswordBytes)
 	if err != nil {
 		logger.Error("users.AddUser: bcrypt error, could not add user %s", err)
 		return err // bcrypt err'd out, can't continue
@@ -60,41 +46,43 @@ func (users *users) AddUser(logger Logger, user *User) error {
 
 	user.Password = string(hashedPasswordBytes)
 	logger.Info("users.AddUser: successfully hashed password")
-	return users.db.AddUser(logger, user)
-}
-
-func (users *users) GenerateToken(logger Logger, user *User) (string, error) {
-	logger.Info("users.GenerateToken: generating token for %s", user.Username)
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &tokenClaims{
-		jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(12 * time.Hour).Unix(),
-			IssuedAt:  time.Now().Unix(),
-		},
-		user.Username,
-		user.Email,
-	}) // constructing payload of the jwt token before signing
-
-	logger.Info("users.GenerateToken: successfully generated token for %s", user.Username)
-	return token.SignedString([]byte(users.signingKey))
+	id, err := users.ds.AddUser(logger, user)
+	if err != nil {
+		logger.Error("users.AddUser: could not add user %s", err)
+		return err
+	}
+	user.UserId = id
+	return nil
 }
 
 func (users *users) AuthenticateUser(logger Logger, user *User) bool {
-	logger.Info("users.AuthenticateUser: verifying %s login credentials", user.Username)
+	logger.Info("users.AuthenticateUser: verifying %s Token credentials", user.Username)
 
-	dbUser, err := users.db.GetUserFromUsername(logger, user.Username)
+	dbUser, err := users.ds.GetAuthenticatedUserFromUsername(logger, user)
 	if err != nil {
 		logger.Error("users.AuthenticateUser: could not retrieve user from database %s", err)
 		return false // could not find the user by username
 	}
-
 	if err := bcrypt.CompareHashAndPassword([]byte(dbUser.Password), []byte(user.Password)); err != nil {
 		logger.Error("users.AuthenticateUser: password did not match hashed password %s", err)
 		return false // db password and the password passed did not match
 	}
 
 	logger.Info("users.AuthenticateUser: user %s is verified to be who they say they are", user.Username)
+	user.UserId = dbUser.UserId
 	return true // successfully authenticated
+}
+
+// resolves a userId from either a username or an email
+func (users *users) ResolveUserIdFromValue(logger Logger, userStr string) (int64, error) {
+	if strings.ContainsRune(userStr, '@') {
+		// TODO validate that this is a valid email before reaching out to datasource
+		logger.Info("users.ResolveUserIdFromValue: string passed is likely to be an email: %s", userStr)
+		return users.ds.ResolveUserIdFromEmail(logger, userStr)
+	}
+	// TODO validate that this is a valid username before reaching out to datasource
+	logger.Info("users.ResolveUserIdFromValue: string passed is likely to be an username: %s", userStr)
+	return users.ds.ResolveUserIdFromUsername(logger, userStr)
 }
 
 // validate password based on the 6 characters, 1 upper, 1 lower, 1 number, 1 special character
@@ -159,7 +147,6 @@ func (users *users) ValidPassword(logger Logger, password string) error {
 // error is safe to return to consumer as a response message
 func (users *users) ValidUser(logger Logger, user *User) error {
 	username, email := user.Username, user.Email
-	logger.Info("username is %s", username)
 
 	// validation
 	if _, err := mail.ParseAddress(email); err != nil {
@@ -173,12 +160,18 @@ func (users *users) ValidUser(logger Logger, user *User) error {
 	} else if len(username) == 0 {
 		return fmt.Errorf("a username is required")
 	}
+	for _, c := range username {
+		if unicode.IsLetter(c) || unicode.IsNumber(c) || c == '_' {
+			continue
+		}
+		return fmt.Errorf("username must only consist of letters, numbers, or '_'")
+	}
 
 	// lookups
-	if _, err := users.db.GetUserFromEmail(logger, email); err == nil {
+	if _, err := users.ds.GetUserFromEmail(logger, email); err == nil {
 		return fmt.Errorf("a user already exists with this email")
 	}
-	if _, err := users.db.GetUserFromUsername(logger, username); err == nil {
+	if _, err := users.ds.GetUserFromUsername(logger, username); err == nil {
 		return fmt.Errorf("the user '%s' already exists", username)
 	}
 	return nil
