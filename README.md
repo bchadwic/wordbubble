@@ -51,7 +51,7 @@ ${token}
 |     Field     |  Description  |  Constraints | Required |
 | ------------- | ------------- | ------------ | ---- |
 |   `username`  | name used to identify user  | `1-40` characters of `a-z`, `1-9` or `_` | ✓ |
-| `email`  | email used to identify user  | a valid email address | ✓ |
+| `password`  | key to get a token  | `>6` characters of an uppercase, a lowercase, a number, and a symbol | ✓ |
 
 ### Push a new WordBubble
 
