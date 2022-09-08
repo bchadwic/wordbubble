@@ -222,7 +222,7 @@ func (ds *datasource) RemoveAndReturnLatestWordBubbleForUser(logger Logger, user
 	logger.Info("db.RemoveAndReturnLatestWordBubbleForUser: removing and returning the last wordbubble for %d", userId)
 	stmt, err := ds.db.Prepare(`
 	DELETE FROM wordbubbles WHERE wordbubble_id = ( 
-		SELECT wordbubble_id FROM wordbubbles WHERE user_id = ? ORDER BY created_timestamp DESC LIMIT 1
+		SELECT wordbubble_id FROM wordbubbles WHERE user_id = ? ORDER BY created_timestamp ASC LIMIT 1
 	) RETURNING text;
 	`)
 	if err != nil {
