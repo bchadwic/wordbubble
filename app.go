@@ -107,7 +107,7 @@ func (app *App) Push(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		logger.Error("app.Push: invalid http method: %s", r.Method)
 		app.respond("invalid http method", http.StatusMethodNotAllowed, w)
-		return // return since Token requires a body with credentials
+		return
 	}
 
 	authValue := r.Header.Get("authorization")
@@ -125,7 +125,7 @@ func (app *App) Push(w http.ResponseWriter, r *http.Request) {
 	}
 
 	token := splitToken[1] // grab the token from the Bearer string
-	userId, err := app.auth.ValidateTokenAndReceiveId(logger, token)
+	userId, err := app.auth.ValidateAccessTokenAndReceiveId(logger, token)
 	if err != nil {
 		app.respond(err.Error(), http.StatusUnauthorized, w)
 		return
