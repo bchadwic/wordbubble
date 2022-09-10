@@ -53,7 +53,7 @@ func (app *App) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logger.Info("app.Register: user: %s created, returning token", user.UserId)
-	token, err := app.auth.GenerateAccessToken(logger, &user)
+	token, err := app.auth.GenerateAccessToken(logger, user.UserId)
 	if err != nil {
 		app.respond(err.Error(), http.StatusInternalServerError, w)
 		return
@@ -87,7 +87,7 @@ func (app *App) Token(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logger.Info("app.Token: user: %s successfully logged in, returning token", user.UserId)
-	token, err := app.auth.GenerateAccessToken(logger, &user)
+	token, err := app.auth.GenerateAccessToken(logger, user.UserId)
 	if err != nil {
 		app.respond(err.Error(), http.StatusInternalServerError, w)
 		return
@@ -98,6 +98,54 @@ func (app *App) Token(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *App) RefreshToken(w http.ResponseWriter, r *http.Request) {
+	logger := app.logger
+	logger.Info("app.RefreshToken: handling request")
+
+	if r.Method != http.MethodPost {
+		logger.Error("app.Push: invalid http method: %s", r.Method)
+		app.respond("invalid http method", http.StatusMethodNotAllowed, w)
+		return
+	}
+
+	var reqBody struct {
+		RefreshToken string `json:"refresh_token"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+		logger.Error("app.RefreshToken: could not decode refresh token from body, error: %s", err)
+		app.respond("could not parse refresh token from the request body", http.StatusBadRequest, w)
+		return
+	}
+
+	userId, err := app.auth.GetUserIdFromTokenString(logger, reqBody.RefreshToken)
+	if err != nil {
+		app.respond(err.Error(), http.StatusUnauthorized, w)
+		return
+	}
+
+	timeBeforeExpiration, err := app.auth.VerifyTokenAgainstAuthSource(logger, userId, reqBody.RefreshToken)
+	if err != nil {
+		app.respond(err.Error(), http.StatusUnauthorized, w)
+		return
+	}
+
+	var latestRefreshToken string
+	if timeBeforeExpiration < ImminentExpirationWindow {
+		latestRefreshToken = app.auth.GetOrCreateLatestRefreshToken(logger, userId)
+	}
+
+	accessToken, err := app.auth.GenerateAccessToken(logger, userId)
+	if err != nil {
+		app.respond(err.Error(), http.StatusInternalServerError, w)
+		return
+	}
+
+	resp := struct {
+		RefreshToken string `json:"refresh_token,omitempty"`
+		AccessToken  string `json:"access_token"`
+	}{latestRefreshToken, accessToken}
+	logger.Info("app.Token: generated token was successful, sending back token response")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(resp)
 }
 
 func (app *App) Push(w http.ResponseWriter, r *http.Request) {
@@ -125,7 +173,7 @@ func (app *App) Push(w http.ResponseWriter, r *http.Request) {
 	}
 
 	token := splitToken[1] // grab the token from the Bearer string
-	userId, err := app.auth.ValidateAccessTokenAndReceiveId(logger, token)
+	userId, err := app.auth.GetUserIdFromTokenString(logger, token)
 	if err != nil {
 		app.respond(err.Error(), http.StatusUnauthorized, w)
 		return
