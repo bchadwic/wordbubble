@@ -25,11 +25,11 @@ type Users interface {
 }
 
 type users struct {
-	ds DataSource
+	source DataSource
 }
 
-func NewUsersService(ds DataSource) *users {
-	return &users{ds}
+func NewUsersService(source DataSource) *users {
+	return &users{source}
 }
 
 func (users *users) AddUser(logger Logger, user *User) error {
@@ -46,7 +46,7 @@ func (users *users) AddUser(logger Logger, user *User) error {
 
 	user.Password = string(hashedPasswordBytes)
 	logger.Info("users.AddUser: successfully hashed password")
-	id, err := users.ds.AddUser(logger, user)
+	id, err := users.source.AddUser(logger, user)
 	if err != nil {
 		logger.Error("users.AddUser: could not add user %s", err)
 		return err
@@ -58,7 +58,7 @@ func (users *users) AddUser(logger Logger, user *User) error {
 func (users *users) AuthenticateUser(logger Logger, user *User) bool {
 	logger.Info("users.AuthenticateUser: verifying %s Token credentials", user.Username)
 
-	dbUser, err := users.ds.GetAuthenticatedUserFromUsername(logger, user)
+	dbUser, err := users.source.GetAuthenticatedUserFromUsername(logger, user)
 	if err != nil {
 		logger.Error("users.AuthenticateUser: could not retrieve user from database %s", err)
 		return false // could not find the user by username
@@ -78,11 +78,11 @@ func (users *users) ResolveUserIdFromValue(logger Logger, userStr string) (int64
 	if strings.ContainsRune(userStr, '@') {
 		// TODO validate that this is a valid email before reaching out to datasource
 		logger.Info("users.ResolveUserIdFromValue: string passed is likely to be an email: %s", userStr)
-		return users.ds.ResolveUserIdFromEmail(logger, userStr)
+		return users.source.ResolveUserIdFromEmail(logger, userStr)
 	}
 	// TODO validate that this is a valid username before reaching out to datasource
 	logger.Info("users.ResolveUserIdFromValue: string passed is likely to be an username: %s", userStr)
-	return users.ds.ResolveUserIdFromUsername(logger, userStr)
+	return users.source.ResolveUserIdFromUsername(logger, userStr)
 }
 
 // validate password based on the 6 characters, 1 upper, 1 lower, 1 number, 1 special character
@@ -168,10 +168,10 @@ func (users *users) ValidUser(logger Logger, user *User) error {
 	}
 
 	// lookups
-	if _, err := users.ds.GetUserFromEmail(logger, email); err == nil {
+	if _, err := users.source.GetUserFromEmail(logger, email); err == nil {
 		return fmt.Errorf("a user already exists with this email")
 	}
-	if _, err := users.ds.GetUserFromUsername(logger, username); err == nil {
+	if _, err := users.source.GetUserFromUsername(logger, username); err == nil {
 		return fmt.Errorf("the user '%s' already exists", username)
 	}
 	return nil

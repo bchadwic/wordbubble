@@ -16,24 +16,24 @@ type WordBubbles interface {
 }
 
 type wordbubbles struct {
-	ds DataSource
+	source DataSource
 }
 
 type WordBubble struct {
 	Text string `json:"text"`
 }
 
-func NewWordBubblesService(ds DataSource) *wordbubbles {
-	return &wordbubbles{ds}
+func NewWordBubblesService(source DataSource) *wordbubbles {
+	return &wordbubbles{source}
 }
 
 func (wbs *wordbubbles) AddNewWordBubble(logger Logger, userId int64, wb *WordBubble) error {
-	return wbs.ds.AddNewWordBubble(logger, userId, wb)
+	return wbs.source.AddNewWordBubble(logger, userId, wb)
 }
 
 func (wbs *wordbubbles) UserHasAvailability(logger Logger, userId int64) error {
 	logger.Info("wb.UserHasAvailability: processing")
-	amt, err := wbs.ds.NumberOfWordBubblesForUser(logger, userId)
+	amt, err := wbs.source.NumberOfWordBubblesForUser(logger, userId)
 	if err != nil {
 		return err
 	}
@@ -54,5 +54,5 @@ func (wbs *wordbubbles) ValidWordBubble(wb *WordBubble) error {
 }
 
 func (wbs *wordbubbles) RemoveAndReturnLatestWordBubbleForUser(logger Logger, userId int64) (*WordBubble, error) {
-	return wbs.ds.RemoveAndReturnLatestWordBubbleForUser(logger, userId)
+	return wbs.source.RemoveAndReturnLatestWordBubbleForUser(logger, userId)
 }

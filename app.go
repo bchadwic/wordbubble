@@ -55,7 +55,7 @@ func (app *App) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logger.Info("app.Register: user %s created, returning token", user.Username)
-	token, err := app.auth.GenerateToken(logger, &user)
+	token, err := app.auth.GenerateAccessToken(logger, &user)
 	if err != nil {
 		logger.Error("app.Register: an error occurred generating token: %s", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -96,7 +96,7 @@ func (app *App) Token(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logger.Info("app.Token: user %s successfully logged in, returning token", user.Username)
-	token, err := app.auth.GenerateToken(logger, &user)
+	token, err := app.auth.GenerateAccessToken(logger, &user)
 	if err != nil {
 		logger.Error("app.Token: an error occurred generating token: %s", err)
 		w.WriteHeader(http.StatusInternalServerError)
