@@ -13,7 +13,7 @@ func main() {
 	dataSource := NewDataSource()
 	authSource := NewAuthSource()
 
-	go func() { // probably should be a cron job
+	go func() {
 		for range time.Tick(time.Minute * 30) {
 			authSource.CleanupExpiredRefreshTokens(logger)
 		}
@@ -28,6 +28,7 @@ func main() {
 
 	http.HandleFunc("/register", app.Register)
 	http.HandleFunc("/token", app.Token)
+	http.HandleFunc("/refresh_token", app.RefreshToken)
 	http.HandleFunc("/push", app.Push)
 	http.HandleFunc("/pop", app.Pop)
 

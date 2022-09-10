@@ -103,3 +103,13 @@ Hello World!
 #### Why is the path to poll from a queue `/pop`?
 Because you pop WordBubbles.
 
+
+## Logging Standard
+Log an `INFO` at the begining and end of each function, and be sure to include information that will help debug later on (ex: userId, trackingId, etc.)
+
+Log an `ERROR` when an `error` is not `nil`. There is no need to log the `error` in multiple spots. Logging it at the source will help determine immediately where the problem is.
+
+Log `DEBUG` and `WARN` sparsely. 
+
+## Error Handling
+For the time being, the strategy is to create the actual `error` response where the source of the `error` is. Creating the `error` message as deep as possible alleviates the `app` layer from being burdened with creating one. When the error comes from outside of this project, create one based off the function that threw the `error`.

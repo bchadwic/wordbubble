@@ -18,9 +18,13 @@ type User struct {
 
 type Users interface {
 	AddUser(logger Logger, user *User) error
-	AuthenticateUser(logger Logger, user *User) bool
+	AuthenticateUser(logger Logger, user *User) error
 	ResolveUserIdFromValue(logger Logger, userStr string) (int64, error)
+	// validate password based on the 6 characters, 1 upper, 1 lower, 1 number, 1 special character
+	// error is safe to return to consumer as a response message
 	ValidPassword(logger Logger, password string) error
+	// validate user based on whether the user exists with either the username or email
+	// also be sure to check that they are both valid inputs
 	ValidUser(logger Logger, user *User) error
 }
 
@@ -55,22 +59,22 @@ func (users *users) AddUser(logger Logger, user *User) error {
 	return nil
 }
 
-func (users *users) AuthenticateUser(logger Logger, user *User) bool {
+func (users *users) AuthenticateUser(logger Logger, user *User) error {
 	logger.Info("users.AuthenticateUser: verifying %s Token credentials", user.Username)
 
 	dbUser, err := users.source.GetAuthenticatedUserFromUsername(logger, user)
 	if err != nil {
 		logger.Error("users.AuthenticateUser: could not retrieve user from database %s", err)
-		return false // could not find the user by username
+		return err // could not find the user by username
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(dbUser.Password), []byte(user.Password)); err != nil {
 		logger.Error("users.AuthenticateUser: password did not match hashed password %s", err)
-		return false // db password and the password passed did not match
+		return err // db password and the password passed did not match
 	}
 
 	logger.Info("users.AuthenticateUser: user %s is verified to be who they say they are", user.Username)
 	user.UserId = dbUser.UserId
-	return true // successfully authenticated
+	return nil // successfully authenticated
 }
 
 // resolves a userId from either a username or an email
@@ -85,8 +89,6 @@ func (users *users) ResolveUserIdFromValue(logger Logger, userStr string) (int64
 	return users.source.ResolveUserIdFromUsername(logger, userStr)
 }
 
-// validate password based on the 6 characters, 1 upper, 1 lower, 1 number, 1 special character
-// error is safe to return to consumer as a response message
 func (users *users) ValidPassword(logger Logger, password string) error {
 	var hasMinLen, hasUpper, hasLower, hasNumber, hasSpecial bool
 	if len(password) > minPasswordLength {
@@ -142,9 +144,6 @@ func (users *users) ValidPassword(logger Logger, password string) error {
 	return fmt.Errorf(errStr + "and " + last)
 }
 
-// validate user based on whether the user exists with either the username or email
-// also be sure to check that they are both valid inputs
-// error is safe to return to consumer as a response message
 func (users *users) ValidUser(logger Logger, user *User) error {
 	username, email := user.Username, user.Email
 

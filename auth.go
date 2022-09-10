@@ -16,6 +16,8 @@ const (
 	refreshTokenDayLimit = 10
 )
 
+var cleanupExpiredRefreshTokensStatement = fmt.Sprintf(`DELETE FROM tokens WHERE created_timestamp < date('now', '-%d days')`, refreshTokenDayLimit)
+
 type Auth interface {
 	GenerateAccessToken(logger Logger, user *User) (string, error)
 	ValidateTokenAndReceiveId(logger Logger, tokenStr string) (int64, error)
@@ -25,7 +27,7 @@ type AuthSource interface {
 	StoreRefreshToken(logger Logger, userId int64, refreshToken string) error
 	ValidateRefreshToken(logger Logger, userId int64, refreshToken string) error
 	RemoveRefreshToken(logger Logger, userId int64, refreshToken string) error
-	CleanupExpiredRefreshTokens(logger Logger) error
+	CleanupExpiredRefreshTokens(logger Logger)
 }
 
 type auth struct {
@@ -179,18 +181,17 @@ func (source *authSource) RemoveRefreshToken(logger Logger, userId int64, refres
 	return nil
 }
 
-func (source *authSource) CleanupExpiredRefreshTokens(logger Logger) error {
+func (source *authSource) CleanupExpiredRefreshTokens(logger Logger) {
 	logger.Info("auth.CleanupExpiredRefreshTokens: cleaning up tokens older than %d days", refreshTokenDayLimit)
-	rs, err := source.db.Exec(fmt.Sprintf(`DELETE FROM tokens WHERE created_timestamp < date('now', '-%d days')`, refreshTokenDayLimit))
+	rs, err := source.db.Exec(cleanupExpiredRefreshTokensStatement)
 	if err != nil {
 		logger.Error("auth.CleanupExpiredRefreshTokens: could not execute delete tokens: error: %s", err)
-		return err
+		return
 	}
 	amt, err := rs.RowsAffected()
 	if err != nil {
 		logger.Error("auth.CleanupExpiredRefreshTokens: could not successfully determine the amount of tokens that were deleted, error: %s", err)
-		return err
+		return
 	}
 	logger.Info("auth.CleanupExpiredRefreshTokens: successfully deleted %d tokens", amt)
-	return nil
 }
