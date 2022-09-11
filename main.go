@@ -14,7 +14,7 @@ func main() {
 	authSource := NewAuthSource()
 
 	go func() {
-		for range time.Tick(time.Minute * 30) {
+		for range time.Tick(RefreshTokenCleanerRate) {
 			authSource.CleanupExpiredRefreshTokens(logger)
 		}
 	}()
@@ -26,9 +26,9 @@ func main() {
 		NewWordBubblesService(dataSource),
 	}
 
-	http.HandleFunc("/register", app.Register)
+	http.HandleFunc("/signup", app.Signup)
+	http.HandleFunc("/login", app.Login)
 	http.HandleFunc("/token", app.Token)
-	http.HandleFunc("/refresh_token", app.RefreshToken)
 	http.HandleFunc("/push", app.Push)
 	http.HandleFunc("/pop", app.Pop)
 

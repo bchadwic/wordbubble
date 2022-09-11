@@ -12,15 +12,17 @@ const (
 	minPasswordLength        = 6
 	maxUsernameLength        = 40
 	maxEmailLength           = 320
-	refreshTokenDayLimit     = 10
-	refreshTokenHourLimit    = int64(24 * time.Hour * refreshTokenDayLimit)
-	ImminentExpirationWindow = int64(24 * time.Hour * 5) // 5 days
+	refreshTokenTimeLimit    = 60
+	accessTokenTimeLimit     = 30 * time.Second
+	RefreshTokenCleanerRate  = 30 * time.Second
+	ImminentExpirationWindow = int64(float64(refreshTokenTimeLimit) * .8)
 )
 
 var cleanupExpiredRefreshTokensStatement = `DELETE FROM tokens WHERE issued_at < ?`
 
 type Auth interface {
 	GenerateAccessToken(logger Logger, userId int64) (string, error)
+	GenerateRefreshToken(logger Logger, userId int64) (string, error)
 	GetUserIdFromTokenString(logger Logger, tokenStr string) (int64, error)
 	VerifyTokenAgainstAuthSource(logger Logger, userId int64, tokenStr string) (int64, error)
 	GetOrCreateLatestRefreshToken(logger Logger, userId int64) string
@@ -56,7 +58,6 @@ func NewAuthSource() *authSource {
 	panicker(err)
 	_, err = db.Exec(`
 	CREATE TABLE IF NOT EXISTS tokens (
-		token_id INTEGER PRIMARY KEY AUTOINCREMENT,
 		user_id INTEGER NOT NULL,  
 		refresh_token TEXT NOT NULL,
 		issued_at INTEGER NOT NULL,
@@ -75,7 +76,7 @@ func (auth *auth) GenerateAccessToken(logger Logger, userId int64) (string, erro
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &tokenClaims{
 		jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(30 * time.Minute).Unix(),
+			ExpiresAt: time.Now().Add(accessTokenTimeLimit).Unix(),
 			IssuedAt:  time.Now().Unix(),
 		},
 		userId,
@@ -93,9 +94,7 @@ func (auth *auth) GenerateRefreshToken(logger Logger, userId int64) (string, err
 	logger.Info("auth.GenerateRefreshToken: generating refresh token for user: %d", userId)
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &tokenClaims{
-		jwt.StandardClaims{
-			ExpiresAt: -1, // handled by the database for refresh tokens
-		},
+		jwt.StandardClaims{},
 		userId,
 	})
 	signedToken, err := token.SignedString([]byte(auth.signingKey))
@@ -111,7 +110,7 @@ func (auth *auth) GenerateRefreshToken(logger Logger, userId int64) (string, err
 }
 
 func (auth *auth) GetUserIdFromTokenString(logger Logger, tokenStr string) (int64, error) {
-	logger.Info("auth.ReceiveUserIdFromTokenString: parsing token claims and receiving userId")
+	logger.Info("auth.GetUserIdFromTokenString: parsing token claims and receiving userId")
 
 	tokenClaims := &tokenClaims{} // TODO come back to this mapping
 	token, err := jwt.ParseWithClaims(tokenStr, tokenClaims, func(t *jwt.Token) (interface{}, error) {
@@ -119,17 +118,17 @@ func (auth *auth) GetUserIdFromTokenString(logger Logger, tokenStr string) (int6
 	})
 	if err != nil {
 		if err == jwt.ErrSignatureInvalid {
-			logger.Error("auth.ReceiveUserIdFromTokenString: signature is invalid, error: %s", err)
+			logger.Error("auth.GetUserIdFromTokenString: signature is invalid, error: %s", err)
 			return 0, errors.New("token signature was found to be invalid")
 		}
-		logger.Error("auth.ReceiveUserIdFromTokenString: could not parse token: error %s", err)
-		return 0, errors.New("could not parse the sent token")
-	}
-	if !token.Valid { // only applicable to access tokens
-		logger.Warn("auth.ReceiveUserIdFromTokenString: token is expired for user: %d, error: %s", tokenClaims.UserId, err)
+		logger.Error("auth.GetUserIdFromTokenString: an error occurred while parsing token, defaulting to expiration: error %s", err)
 		return 0, errors.New("access token is expired")
 	}
-	logger.Info("auth.ReceiveUserIdFromTokenString: successfully grabbed userId from access token, user: %d", tokenClaims.UserId)
+	if !token.Valid { // only applicable to access tokens
+		logger.Warn("auth.GetUserIdFromTokenString: token is expired for user: %d, error: %s", tokenClaims.UserId, err)
+		return 0, errors.New("access token is expired")
+	}
+	logger.Info("auth.GetUserIdFromTokenString: successfully grabbed userId from access token, user: %d", tokenClaims.UserId)
 	return tokenClaims.UserId, nil
 }
 
@@ -139,19 +138,18 @@ func (auth *auth) VerifyTokenAgainstAuthSource(logger Logger, userId int64, toke
 		return 0, err
 	}
 	timeDiff := time.Now().Unix() - issuedAt
-	expireLimit := int64(24 * time.Hour * refreshTokenDayLimit)
-	if timeDiff >= expireLimit {
+	if timeDiff >= refreshTokenTimeLimit {
 		logger.Error("auth.VerifyTokenAgainstAuthSource: token was found to be expired for user: %d", userId)
 		return 0, errors.New("refresh token is expired, please login again")
 	}
-	return expireLimit - timeDiff, nil
+	return refreshTokenTimeLimit - timeDiff, nil
 }
 
 func (auth *auth) GetOrCreateLatestRefreshToken(logger Logger, userId int64) string {
 	logger.Info("GetOrCreateLatestRefreshToken: grabbing the latest token in the database for user: %d", userId)
 	latestRefreshToken, issuedAt := auth.source.GetLatestRefreshToken(logger, userId)
 	if latestRefreshToken != "" { // if there is a token that isn't close to dying, use that
-		if refreshTokenHourLimit-timeSinceIssued(issuedAt) > ImminentExpirationWindow {
+		if refreshTokenTimeLimit-timeSinceIssued(issuedAt) > ImminentExpirationWindow {
 			return latestRefreshToken
 		}
 	}
@@ -237,9 +235,13 @@ func (source *authSource) RemoveRefreshToken(logger Logger, userId int64, refres
 
 // TODO fix me
 func (source *authSource) CleanupExpiredRefreshTokens(logger Logger) {
-	logger.Info("auth.CleanupExpiredRefreshTokens: cleaning up tokens older than %d days", refreshTokenDayLimit)
-
-	rs, err := source.db.Exec(cleanupExpiredRefreshTokensStatement)
+	logger.Info("auth.CleanupExpiredRefreshTokens: cleaning up tokens than the refreshTokenTimeLimit: %d", refreshTokenTimeLimit)
+	stmt, err := source.db.Prepare(cleanupExpiredRefreshTokensStatement)
+	if err != nil {
+		logger.Error("auth.CleanupExpiredRefreshTokens: could not execute delete tokens: error: %s", err)
+		return
+	}
+	rs, err := stmt.Exec(time.Now().Unix() - refreshTokenTimeLimit)
 	if err != nil {
 		logger.Error("auth.CleanupExpiredRefreshTokens: could not execute delete tokens: error: %s", err)
 		return
@@ -276,6 +278,6 @@ func (source *authSource) GetLatestRefreshToken(logger Logger, userId int64) (st
 		logger.Error("auth.GetLatestRefreshToken: could not map the latest refresh token for user: %d, error: %s", userId, err)
 		return "", 0
 	}
-	logger.Info("auth.GetLatestRefreshToken:: successfully matched refresh token sent with a token found in db for user: %d", userId)
+	logger.Info("auth.GetLatestRefreshToken: successfully matched refresh token sent with a token found in db for user: %d", userId)
 	return latestRefreshToken, issuedAt
 }
