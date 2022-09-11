@@ -15,12 +15,15 @@ POST /signup
 {
     "username": "bchadwic",
     "email": "benchadwick87@gmail.com",
-    "password": "Wordbubble123!"
+    "password": "WordBubble123!"
 }
 ```
 ##### Response Body
-```
-${token}
+```json
+{
+    "access_token":${access_token},
+    "refresh_token":${refresh_token}
+}
 ```
 
 #### Parameters
@@ -31,7 +34,32 @@ ${token}
 | `password`  | key to get a token  | `>6` characters of an uppercase, a lowercase, a number, and a symbol | ✓ |
 
 
-### Retrieve a token
+### Login to WordBubble
+
+```
+POST /login
+```
+##### Request Body
+```json
+{
+    "username": "bchadwic",
+    "password": "WordBubble123!"
+}
+```
+##### Response Body
+```json
+{
+    "access_token":${access_token},
+    "refresh_token":${refresh_token}
+}
+```
+#### Parameters
+|     Field     |  Description  |  Constraints | Required |
+| ------------- | ------------- | ------------ | ---- |
+|   `username`  | name used to identify user  | `1-40` characters of `a-z`, `1-9` or `_` | ✓ |
+| `password`  | key to get a token  | `>6` characters of an uppercase, a lowercase, a number, and a symbol | ✓ |
+
+### Get a new Access Token
 
 ```
 POST /token
@@ -39,19 +67,22 @@ POST /token
 ##### Request Body
 ```json
 {
-    "username": "bchadwic",
-    "password": "Wordbubble123!"
+    "refresh_token":${refresh_token}
 }
 ```
 ##### Response Body
-```
-${token}
+```json
+{
+    "access_token":${access_token},
+}
 ```
 #### Parameters
 |     Field     |  Description  |  Constraints | Required |
 | ------------- | ------------- | ------------ | ---- |
-|   `username`  | name used to identify user  | `1-40` characters of `a-z`, `1-9` or `_` | ✓ |
-| `password`  | key to get a token  | `>6` characters of an uppercase, a lowercase, a number, and a symbol | ✓ |
+|   `refresh_token`  | token used to receive new access tokens| nonexpired (10 days) | ✓ |
+
+#### Additional Information
+If the `refresh_token` is about to expire (token has 20% life left) then a new or an existing longer lasting `refresh_token` will be sent back in the body.
 
 ### Push a new WordBubble
 

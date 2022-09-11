@@ -36,7 +36,6 @@ func (app *App) Signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO combine ValidPassword with ValidUser
 	if err := app.users.ValidPassword(logger, user.Password); err != nil {
 		app.respond(err.Error(), http.StatusBadRequest, w)
 		return
