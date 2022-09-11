@@ -21,8 +21,8 @@ POST /signup
 ##### Response Body
 ```json
 {
-    "access_token":${access_token},
-    "refresh_token":${refresh_token}
+    "access_token":"${access_token}",
+    "refresh_token":"${refresh_token}"
 }
 ```
 
@@ -49,8 +49,8 @@ POST /login
 ##### Response Body
 ```json
 {
-    "access_token":${access_token},
-    "refresh_token":${refresh_token}
+    "access_token":"${access_token}",
+    "refresh_token":"${refresh_token}"
 }
 ```
 #### Parameters
@@ -67,13 +67,13 @@ POST /token
 ##### Request Body
 ```json
 {
-    "refresh_token":${refresh_token}
+    "refresh_token":"${refresh_token}"
 }
 ```
 ##### Response Body
 ```json
 {
-    "access_token":${access_token},
+    "access_token":"${access_token}",
 }
 ```
 #### Parameters
