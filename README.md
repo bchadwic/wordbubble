@@ -15,12 +15,15 @@ POST /signup
 {
     "username": "bchadwic",
     "email": "benchadwick87@gmail.com",
-    "password": "Wordbubble123!"
+    "password": "WordBubble123!"
 }
 ```
 ##### Response Body
-```
-${token}
+```json
+{
+    "access_token":${access_token},
+    "refresh_token":${refresh_token}
+}
 ```
 
 #### Parameters
@@ -31,7 +34,32 @@ ${token}
 | `password`  | key to get a token  | `>6` characters of an uppercase, a lowercase, a number, and a symbol | ✓ |
 
 
-### Retrieve a token
+### Login to WordBubble
+
+```
+POST /login
+```
+##### Request Body
+```json
+{
+    "username": "bchadwic",
+    "password": "WordBubble123!"
+}
+```
+##### Response Body
+```json
+{
+    "access_token":${access_token},
+    "refresh_token":${refresh_token}
+}
+```
+#### Parameters
+|     Field     |  Description  |  Constraints | Required |
+| ------------- | ------------- | ------------ | ---- |
+|   `username`  | name used to identify user  | `1-40` characters of `a-z`, `1-9` or `_` | ✓ |
+| `password`  | key to get a token  | `>6` characters of an uppercase, a lowercase, a number, and a symbol | ✓ |
+
+### Get a new Access Token
 
 ```
 POST /token
@@ -39,19 +67,22 @@ POST /token
 ##### Request Body
 ```json
 {
-    "username": "bchadwic",
-    "password": "Wordbubble123!"
+    "refresh_token":${refresh_token}
 }
 ```
 ##### Response Body
-```
-${token}
+```json
+{
+    "access_token":${access_token},
+}
 ```
 #### Parameters
 |     Field     |  Description  |  Constraints | Required |
 | ------------- | ------------- | ------------ | ---- |
-|   `username`  | name used to identify user  | `1-40` characters of `a-z`, `1-9` or `_` | ✓ |
-| `password`  | key to get a token  | `>6` characters of an uppercase, a lowercase, a number, and a symbol | ✓ |
+|   `refresh_token`  | token used to receive new access tokens| nonexpired (10 days) | ✓ |
+
+#### Additional Information
+If the `refresh_token` is about to expire (token has 20% life left) then a new or an existing longer lasting `refresh_token` will be sent back in the body.
 
 ### Push a new WordBubble
 
@@ -103,3 +134,13 @@ Hello World!
 #### Why is the path to poll from a queue `/pop`?
 Because you pop WordBubbles.
 
+
+## Logging Standard
+Log an `INFO` at the begining and end of each function, and be sure to include information that will help debug later on (ex: userId, trackingId, etc.)
+
+Log an `ERROR` when an `error` is not `nil`. There is no need to log the `error` in multiple spots. Logging it at the source will help determine immediately where the problem is.
+
+Log `DEBUG` and `WARN` sparsely. 
+
+## Error Handling
+For the time being, the strategy is to create the actual `error` response where the source of the `error` is. Creating the `error` message as deep as possible alleviates the `app` layer from being burdened with creating one. When the error comes from outside of this project, create one based off the function that threw the `error`.

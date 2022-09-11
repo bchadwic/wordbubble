@@ -21,11 +21,11 @@ type DataSource interface {
 	RemoveAndReturnLatestWordBubbleForUser(logger Logger, userId int64) (*WordBubble, error)
 }
 
-type datasource struct {
+type dataSource struct {
 	db *sql.DB
 }
 
-func NewDataSource() *datasource {
+func NewDataSource() *dataSource {
 	panicker := func(err error) {
 		if err != nil {
 			panic(err)
@@ -52,12 +52,12 @@ func NewDataSource() *datasource {
 		FOREIGN KEY(user_id) REFERENCES users(user_id)
 	);`)
 	panicker(err)
-	return &datasource{db}
+	return &dataSource{db}
 }
 
-func (ds *datasource) AddUser(logger Logger, user *User) (int64, error) {
+func (source *dataSource) AddUser(logger Logger, user *User) (int64, error) {
 	logger.Info("db.AddUser: adding in new user %s", user.Username)
-	stmt, err := ds.db.Prepare(`INSERT INTO users(username, email, password) VALUES (?, ?, ?);`)
+	stmt, err := source.db.Prepare(`INSERT INTO users(username, email, password) VALUES (?, ?, ?);`)
 	if err != nil {
 		return 0, err
 	}
@@ -69,9 +69,9 @@ func (ds *datasource) AddUser(logger Logger, user *User) (int64, error) {
 	return res.LastInsertId()
 }
 
-func (ds *datasource) GetAuthenticatedUserFromUsername(logger Logger, user *User) (*User, error) {
+func (source *dataSource) GetAuthenticatedUserFromUsername(logger Logger, user *User) (*User, error) {
 	logger.Info("db.GetAuthenticatedUserFromUsername: retrieving user %s", user.Username)
-	stmt, err := ds.db.Prepare(`SELECT user_id, username, email, password FROM users WHERE username = ?`)
+	stmt, err := source.db.Prepare(`SELECT user_id, username, email, password FROM users WHERE username = ?`)
 	if err != nil {
 		return nil, err
 	}
@@ -91,9 +91,9 @@ func (ds *datasource) GetAuthenticatedUserFromUsername(logger Logger, user *User
 	return &dbUser, nil
 }
 
-func (ds *datasource) GetUserFromUsername(logger Logger, username string) (*User, error) {
+func (source *dataSource) GetUserFromUsername(logger Logger, username string) (*User, error) {
 	logger.Info("db.GetUserFromUsername: retrieving user %s", username)
-	stmt, err := ds.db.Prepare(`SELECT user_id, username, email FROM users WHERE username = ?`)
+	stmt, err := source.db.Prepare(`SELECT user_id, username, email FROM users WHERE username = ?`)
 	if err != nil {
 		return nil, err
 	}
@@ -111,9 +111,9 @@ func (ds *datasource) GetUserFromUsername(logger Logger, username string) (*User
 	return &user, nil
 }
 
-func (ds *datasource) GetUserFromEmail(logger Logger, email string) (*User, error) {
+func (source *dataSource) GetUserFromEmail(logger Logger, email string) (*User, error) {
 	logger.Info("db.GetUserFromEmail: retrieving user by email %s", email)
-	stmt, err := ds.db.Prepare(`SELECT user_id, username, email FROM users WHERE email = ?`)
+	stmt, err := source.db.Prepare(`SELECT user_id, username, email FROM users WHERE email = ?`)
 	if err != nil {
 		return nil, err
 	}
@@ -131,9 +131,9 @@ func (ds *datasource) GetUserFromEmail(logger Logger, email string) (*User, erro
 	return &user, nil
 }
 
-func (ds *datasource) ResolveUserIdFromUsername(logger Logger, username string) (int64, error) {
+func (source *dataSource) ResolveUserIdFromUsername(logger Logger, username string) (int64, error) {
 	logger.Info("db.ResolveUserIdFromUsername: retrieving user id for %s", username)
-	stmt, err := ds.db.Prepare(`SELECT user_id FROM users WHERE username = ?`)
+	stmt, err := source.db.Prepare(`SELECT user_id FROM users WHERE username = ?`)
 	if err != nil {
 		return 0, err
 	}
@@ -153,9 +153,9 @@ func (ds *datasource) ResolveUserIdFromUsername(logger Logger, username string) 
 	return userId, nil
 }
 
-func (ds *datasource) ResolveUserIdFromEmail(logger Logger, email string) (int64, error) {
+func (source *dataSource) ResolveUserIdFromEmail(logger Logger, email string) (int64, error) {
 	logger.Info("db.ResolveUserIdFromEmail: retrieving user id for %s", email)
-	stmt, err := ds.db.Prepare(`SELECT user_id FROM users WHERE email = ?`)
+	stmt, err := source.db.Prepare(`SELECT user_id FROM users WHERE email = ?`)
 	if err != nil {
 		return 0, err
 	}
@@ -175,10 +175,9 @@ func (ds *datasource) ResolveUserIdFromEmail(logger Logger, email string) (int64
 	return userId, nil
 }
 
-func (ds *datasource) AddNewWordBubble(logger Logger, userId int64, wb *WordBubble) error {
+func (source *dataSource) AddNewWordBubble(logger Logger, userId int64, wb *WordBubble) error {
 	logger.Info("db.AddNewWordBubble: creating wordbubble %+v for %d", wb, userId)
-	logger.Info("db.AddNewWordBubble: %+v ", ds.db.Stats())
-	stmt, err := ds.db.Prepare(`INSERT INTO wordbubbles (user_id, text) VALUES (?, ?)`)
+	stmt, err := source.db.Prepare(`INSERT INTO wordbubbles (user_id, text) VALUES (?, ?)`)
 	if err != nil {
 		logger.Error("db.AddNewWordBubble: could not prepare statement: %s", err)
 		return err
@@ -192,9 +191,9 @@ func (ds *datasource) AddNewWordBubble(logger Logger, userId int64, wb *WordBubb
 	return nil
 }
 
-func (ds *datasource) NumberOfWordBubblesForUser(logger Logger, userId int64) (int64, error) {
+func (source *dataSource) NumberOfWordBubblesForUser(logger Logger, userId int64) (int64, error) {
 	logger.Info("db.NumberOfWordBubblesForUser: checking amount of wordbubbles for user %d", userId)
-	stmt, err := ds.db.Prepare(`SELECT COUNT(*) from wordbubbles WHERE user_id = ?`)
+	stmt, err := source.db.Prepare(`SELECT COUNT(*) from wordbubbles WHERE user_id = ?`)
 	if err != nil {
 		logger.Error("db.AddNewWordBubble: could not prepare statement: %s", err)
 		return 0, err
@@ -218,9 +217,9 @@ func (ds *datasource) NumberOfWordBubblesForUser(logger Logger, userId int64) (i
 	return amt, nil
 }
 
-func (ds *datasource) RemoveAndReturnLatestWordBubbleForUser(logger Logger, userId int64) (*WordBubble, error) {
+func (source *dataSource) RemoveAndReturnLatestWordBubbleForUser(logger Logger, userId int64) (*WordBubble, error) {
 	logger.Info("db.RemoveAndReturnLatestWordBubbleForUser: removing and returning the last wordbubble for %d", userId)
-	stmt, err := ds.db.Prepare(`
+	stmt, err := source.db.Prepare(`
 	DELETE FROM wordbubbles WHERE wordbubble_id = ( 
 		SELECT wordbubble_id FROM wordbubbles WHERE user_id = ? ORDER BY created_timestamp ASC LIMIT 1
 	) RETURNING text;
