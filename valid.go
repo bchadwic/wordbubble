@@ -7,10 +7,23 @@ import (
 )
 
 const (
-	minPasswordLength        = 6
-	maxUsernameLength        = 40
-	maxEmailLength           = 320
+	minPasswordLength = 6
+	maxUsernameLength = 40
+	maxEmailLength    = 320
 )
+
+func ValidUser(user *User) error {
+	if err := ValidEmail(user.Email); err != nil {
+		return err
+	}
+	if err := ValidUsername(user.Username); err != nil {
+		return err
+	}
+	if err := ValidPassword(user.Password); err != nil {
+		return err
+	}
+	return nil
+}
 
 // validate that the string passed in is an email, and that it's not longer than maxEmailLength
 func ValidEmail(email string) error {

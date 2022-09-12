@@ -33,13 +33,7 @@ func (app *App) Signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := ValidPassword(user.Password); err != nil {
-		app.respond(err.Error(), http.StatusBadRequest, w)
-		return
-	}
-
-	user.Username = strings.Trim(user.Username, " ")
-	if err := app.users.ValidUser(&user); err != nil {
+	if err := ValidUser(&user); err != nil {
 		app.respond(err.Error(), http.StatusBadRequest, w)
 		return
 	}
@@ -71,35 +65,35 @@ func (app *App) Signup(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *App) Login(w http.ResponseWriter, r *http.Request) {
-	logger := app.logger
-	logger.Info("handling request")
-
 	if r.Method != http.MethodPost {
-		logger.Error("invalid http method: %s", r.Method)
+		app.logger.Error("invalid http method: %s", r.Method)
 		app.respond("invalid http method", http.StatusMethodNotAllowed, w)
 		return
 	}
 
-	var user User
-	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
-		logger.Error("could not decode user from body: %s", err)
+	var reqBody struct {
+		user     string `json:"user"`
+		password string `json:"password"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+		app.logger.Error("could not decode user from body: %s", err)
 		app.respond("could not parse a user from the request body", http.StatusBadRequest, w)
 		return
 	}
 
-	user.Username = strings.Trim(user.Username, " ")
-	if err := app.users.AuthenticateUser(&user); err != nil {
-		app.respond(err.Error(), http.StatusUnauthorized, w)
+	AuthenticateUser := app.users.RetrieveAuthenticatedUserByString(reqBody.user, reqBody.password)
+	if AuthenticateUser == nil {
+		app.respond("could not authenticate user using credentials passed", http.StatusUnauthorized, w)
 		return
 	}
 
-	accessToken, err := app.auth.GenerateAccessToken(user.Id)
+	accessToken, err := app.auth.GenerateAccessToken(AuthenticateUser.Id)
 	if err != nil {
 		app.respond(err.Error(), http.StatusInternalServerError, w)
 		return
 	}
 
-	refreshToken, err := app.auth.GenerateRefreshToken(user.Id)
+	refreshToken, err := app.auth.GenerateRefreshToken(AuthenticateUser.Id)
 	if err != nil {
 		app.respond(err.Error(), http.StatusInternalServerError, w)
 		return
@@ -109,17 +103,14 @@ func (app *App) Login(w http.ResponseWriter, r *http.Request) {
 		RefreshToken string `json:"refresh_token"`
 		AccessToken  string `json:"access_token"`
 	}{refreshToken, accessToken}
-	logger.Info("generated token was successful, sending back token response")
+	app.logger.Info("generated token was successful, sending back token response")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(resp)
 }
 
 func (app *App) Token(w http.ResponseWriter, r *http.Request) {
-	logger := app.logger
-	logger.Info("handling request")
-
 	if r.Method != http.MethodPost {
-		logger.Error("invalid http method: %s", r.Method)
+		app.logger.Error("invalid http method: %s", r.Method)
 		app.respond("invalid http method", http.StatusMethodNotAllowed, w)
 		return
 	}
@@ -128,7 +119,7 @@ func (app *App) Token(w http.ResponseWriter, r *http.Request) {
 		RefreshToken string `json:"refresh_token"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
-		logger.Error("could not decode refresh token from body, error: %s", err)
+		app.logger.Error("could not decode refresh token from body, error: %s", err)
 		app.respond("could not parse refresh token from the request body", http.StatusBadRequest, w)
 		return
 	}
@@ -161,31 +152,28 @@ func (app *App) Token(w http.ResponseWriter, r *http.Request) {
 		RefreshToken string `json:"refresh_token,omitempty"`
 		AccessToken  string `json:"access_token"`
 	}{latestRefreshToken, accessToken}
-	logger.Info("generated token was successful, sending back token response")
+	app.logger.Info("generated token was successful, sending back token response")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(resp)
 }
 
 func (app *App) Push(w http.ResponseWriter, r *http.Request) {
-	logger := app.logger
-	logger.Info("handling request")
-
 	if r.Method != http.MethodPost {
-		logger.Error("invalid http method: %s", r.Method)
+		app.logger.Error("invalid http method: %s", r.Method)
 		app.respond("invalid http method", http.StatusMethodNotAllowed, w)
 		return
 	}
 
 	authValue := r.Header.Get("authorization")
 	if authValue == "" {
-		logger.Error("authorization was not passed")
+		app.logger.Error("authorization was not passed")
 		app.respond("authorization header is required for pushing a wordbubble", http.StatusUnauthorized, w)
 		return
 	}
 
 	splitToken := strings.Split(authValue, "Bearer ")
 	if len(splitToken) < 2 {
-		logger.Error("authorization value didn't specifiy token type as bearer")
+		app.logger.Error("authorization value didn't specifiy token type as bearer")
 		app.respond("a bearer token is required for pushing a wordbubble", http.StatusUnauthorized, w)
 		return
 	}
@@ -199,7 +187,7 @@ func (app *App) Push(w http.ResponseWriter, r *http.Request) {
 
 	var wb WordBubble // finally we are authenticated! Let's insert a wordbubble
 	if err = json.NewDecoder(r.Body).Decode(&wb); err != nil {
-		logger.Error("could not decode wordbubble from body: %s", err)
+		app.logger.Error("could not decode wordbubble from body: %s", err)
 		app.respond("could not parse a wordbubble from request body", http.StatusBadRequest, w)
 		return
 	}
@@ -220,20 +208,18 @@ func (app *App) Push(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if wb.Text == "teapot" {
-		logger.Info("found ourselves a teapot")
+		app.logger.Info("found ourselves a teapot")
 		app.respond("here is some tea for you", http.StatusTeapot, w)
 		return
 	}
 
-	logger.Info("successfully created a wordbubble for %d", userId)
+	app.logger.Info("successfully created a wordbubble for %d", userId)
 	app.respond("thank you!", http.StatusCreated, w)
 }
 
 func (app *App) Pop(w http.ResponseWriter, r *http.Request) {
-	logger := app.logger
-
 	if r.Method != http.MethodDelete {
-		logger.Error("invalid http method: %s", r.Method)
+		app.logger.Error("invalid http method: %s", r.Method)
 		app.respond("invalid http method", http.StatusMethodNotAllowed, w)
 		return
 	}
@@ -242,12 +228,12 @@ func (app *App) Pop(w http.ResponseWriter, r *http.Request) {
 		UserStr string `json:"user"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
-		logger.Error("could not decode identity from body: %s", err)
+		app.logger.Error("could not decode identity from body: %s", err)
 		app.respond("could not parse a user from request body", http.StatusBadRequest, w)
 		return
 	}
 
-	user := app.users.GetUserFromUserString(reqBody.UserStr)
+	user := app.users.RetrieveUserByString(reqBody.UserStr)
 	if user == nil {
 		app.respond(fmt.Sprintf("could not resolve user `%s`", reqBody.UserStr), http.StatusBadRequest, w)
 		return
@@ -264,6 +250,6 @@ func (app *App) Pop(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logger.Info("successfully popped a wordbubble for %d", user.Id)
+	app.logger.Info("successfully popped a wordbubble for %d", user.Id)
 	app.respond(wordbubble.Text, http.StatusOK, w)
 }
