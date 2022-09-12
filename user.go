@@ -64,6 +64,7 @@ func (users *users) AuthenticateUser(user *User) error {
 }
 
 func (users *users) GetUserFromUserString(userStr string) *User {
+	// TODO log the error once we get it back
 	if err := ValidEmail(userStr); err == nil {
 		user, _ := users.source.GetUserFromEmail(userStr)
 		return user
