@@ -1,6 +1,11 @@
-package main
+package wb
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/bchadwic/wordbubble/model"
+	"github.com/bchadwic/wordbubble/util"
+)
 
 const (
 	minWordBubbleLength    = 1
@@ -9,26 +14,22 @@ const (
 )
 
 type WordBubbles interface {
-	AddNewWordBubble(userId int64, wb *WordBubble) error
-	ValidWordBubble(wb *WordBubble) error
+	AddNewWordBubble(userId int64, wb *model.WordBubble) error
+	ValidWordBubble(wb *model.WordBubble) error
 	UserHasAvailability(userId int64) error
-	RemoveAndReturnLatestWordBubbleForUserId(userId int64) *WordBubble
+	RemoveAndReturnLatestWordBubbleForUserId(userId int64) *model.WordBubble
 }
 
 type wordbubbles struct {
 	source DataSource
-	log    Logger
+	log    util.Logger
 }
 
-type WordBubble struct {
-	Text string `json:"text"`
-}
-
-func NewWordBubblesService(source DataSource, logger Logger) *wordbubbles {
+func NewWordBubblesService(source DataSource, logger util.Logger) *wordbubbles {
 	return &wordbubbles{source, logger}
 }
 
-func (wbs *wordbubbles) AddNewWordBubble(userId int64, wb *WordBubble) error {
+func (wbs *wordbubbles) AddNewWordBubble(userId int64, wb *model.WordBubble) error {
 	return wbs.source.AddNewWordBubble(userId, wb)
 }
 
@@ -46,7 +47,7 @@ func (wbs *wordbubbles) UserHasAvailability(userId int64) error {
 	return nil
 }
 
-func (wbs *wordbubbles) ValidWordBubble(wb *WordBubble) error {
+func (wbs *wordbubbles) ValidWordBubble(wb *model.WordBubble) error {
 	len := len(wb.Text)
 	if len < minWordBubbleLength || len > maxWordBubbleLength {
 		return fmt.Errorf("wordbubble sent is invalid, must be inbetween 1-255 characters, received %d", len)
@@ -54,6 +55,6 @@ func (wbs *wordbubbles) ValidWordBubble(wb *WordBubble) error {
 	return nil
 }
 
-func (wbs *wordbubbles) RemoveAndReturnLatestWordBubbleForUserId(userId int64) *WordBubble {
+func (wbs *wordbubbles) RemoveAndReturnLatestWordBubbleForUserId(userId int64) *model.WordBubble {
 	return wbs.source.RemoveAndReturnLatestWordBubbleForUserId(userId)
 }

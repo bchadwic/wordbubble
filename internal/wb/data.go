@@ -1,31 +1,31 @@
-package main
+package wb
 
 import (
 	"database/sql"
 	"fmt"
 
+	"github.com/bchadwic/wordbubble/model"
+	"github.com/bchadwic/wordbubble/util"
 	_ "github.com/mattn/go-sqlite3"
 )
 
 type DataSource interface {
 	// users
-	AddUser(user *User) (int64, error)
-	GetAuthenticatedUserFromUsername(user *User) (*User, error)
-	GetUserFromUsername(username string) (*User, error)
-	GetUserFromEmail(email string) (*User, error)
+	AddUser(user *model.User) (int64, error)
+	RetrieveUserByString(userStr string) *model.User
 
 	// wordbubbles
-	AddNewWordBubble(userId int64, wb *WordBubble) error
+	AddNewWordBubble(userId int64, wb *model.WordBubble) error
 	NumberOfWordBubblesForUser(userId int64) (int64, error)
-	RemoveAndReturnLatestWordBubbleForUserId(userId int64) *WordBubble
+	RemoveAndReturnLatestWordBubbleForUserId(userId int64) *model.WordBubble
 }
 
 type dataSource struct {
 	db  *sql.DB
-	log Logger
+	log util.Logger
 }
 
-func NewDataSource(logger Logger) *dataSource {
+func NewDataSource(logger util.Logger) *dataSource {
 	panicker := func(err error) {
 		if err != nil {
 			panic(err)
@@ -55,7 +55,7 @@ func NewDataSource(logger Logger) *dataSource {
 	return &dataSource{db, logger}
 }
 
-func (source *dataSource) AddUser(user *User) (int64, error) {
+func (source *dataSource) AddUser(user *model.User) (int64, error) {
 	stmt, err := source.db.Prepare(`INSERT INTO users(username, email, password) VALUES (?, ?, ?);`)
 	if err != nil {
 		source.log.Error("prepared statement error for adding user: %s, error: %s", user.Username, err)
@@ -69,74 +69,42 @@ func (source *dataSource) AddUser(user *User) (int64, error) {
 	return res.LastInsertId()
 }
 
-func (source *dataSource) GetAuthenticatedUserFromUsername(user *User) (*User, error) {
-	stmt, err := source.db.Prepare(`SELECT user_id, username, email, password FROM users WHERE username = ?`)
-	if err != nil {
-		source.log.Error("prepared statement error for retrieving authenticated user: %s, error: %s", user.Username, err)
-		return nil, err
+func (source *dataSource) RetrieveUserByString(userStr string) *model.User {
+	// TODO log the error once we get it back
+	var stmt *sql.Stmt
+	var err error
+	switch {
+	case util.ValidEmail(userStr) == nil:
+		stmt, err = source.db.Prepare(`SELECT user_id, username, email, password FROM users WHERE email = ?`)
+	case util.ValidUsername(userStr) == nil:
+		stmt, err = source.db.Prepare(`SELECT user_id, username, email, password FROM users WHERE username = ?`)
+	default:
+		source.log.Info("couldn't determine if the string passed is a username or an email")
+		return nil
 	}
-	row, err := stmt.Query(user.Username)
 	if err != nil {
-		source.log.Error("querying error for retrieving authenticated user: %s, error: %s", user.Username, err)
-		return nil, err
+		source.log.Error("prepared statement error for retrieving user by string, user: %s, error: %s", userStr, err)
+		return nil
+	}
+	row, err := stmt.Query(userStr)
+	if err != nil {
+		source.log.Error("querying error for retrieving user by string: %s, error: %s", userStr, err)
+		return nil
 	}
 	defer row.Close()
 	if !row.Next() {
-		source.log.Error("could not find user in database, user: %s", user.Username)
-		return nil, fmt.Errorf("could not find user with username %s", user.Username)
+		source.log.Info("could not find user in database, user: %s", userStr)
+		return nil
 	}
-	var dbUser User
+	var dbUser model.User
 	if err := row.Scan(&dbUser.Id, &dbUser.Username, &dbUser.Email, &dbUser.Password); err != nil {
-		source.log.Error("could not map db user to user struct, user: %s, error: %s", user.Username, err)
-		return nil, fmt.Errorf("could not retrive user information for %s", user.Username)
+		source.log.Error("could not map db user to user struct, user: %s, error: %s", userStr, err)
+		return nil
 	}
-	return &dbUser, nil
+	return &dbUser
 }
 
-func (source *dataSource) GetUserFromUsername(username string) (*User, error) {
-	stmt, err := source.db.Prepare(`SELECT user_id, username, email FROM users WHERE username = ?`)
-	if err != nil {
-		source.log.Error("prepared statement error for getting user from username: %s, error: %s", username, err)
-		return nil, err
-	}
-	row, err := stmt.Query(username)
-	if err != nil {
-		source.log.Error("querying error for getting user from username: %s, error: %s", username, err)
-		return nil, err
-	}
-	defer row.Close()
-	if !row.Next() {
-		source.log.Error("could not find a user with username: %s", username)
-		return nil, fmt.Errorf("could not find user with username %s", username)
-	}
-	var user User
-	row.Scan(&user.Id, &user.Username, &user.Email)
-	return &user, nil
-}
-
-func (source *dataSource) GetUserFromEmail(email string) (*User, error) {
-	source.log.Info("retrieving user by email %s", email)
-	stmt, err := source.db.Prepare(`SELECT user_id, username, email FROM users WHERE email = ?`)
-	if err != nil {
-		source.log.Error("prepared statement error for getting user from email: %s, error: %s", email, err)
-		return nil, err
-	}
-	row, err := stmt.Query(email)
-	if err != nil {
-		source.log.Error("query error for getting user from email: %s, error: %s", email, err)
-		return nil, err
-	}
-	defer row.Close()
-	if !row.Next() {
-		source.log.Error("could not find user with email: %s", email)
-		return nil, fmt.Errorf("could not find user with email %s", email)
-	}
-	var user User
-	row.Scan(&user.Id, &user.Username, &user.Email)
-	return &user, nil
-}
-
-func (source *dataSource) AddNewWordBubble(userId int64, wb *WordBubble) error {
+func (source *dataSource) AddNewWordBubble(userId int64, wb *model.WordBubble) error {
 	stmt, err := source.db.Prepare(`INSERT INTO wordbubbles (user_id, text) VALUES (?, ?)`)
 	if err != nil {
 		source.log.Error("prepared statement error for adding a wordbubble %+v for user: %d, error: %s", wb, userId, err)
@@ -175,7 +143,7 @@ func (source *dataSource) NumberOfWordBubblesForUser(userId int64) (int64, error
 	return amt, nil
 }
 
-func (source *dataSource) RemoveAndReturnLatestWordBubbleForUserId(userId int64) *WordBubble {
+func (source *dataSource) RemoveAndReturnLatestWordBubbleForUserId(userId int64) *model.WordBubble {
 	source.log.Info("removing and returning the last wordbubble for %d", userId)
 	stmt, err := source.db.Prepare(`
 	DELETE FROM wordbubbles WHERE wordbubble_id = ( 
@@ -195,7 +163,7 @@ func (source *dataSource) RemoveAndReturnLatestWordBubbleForUserId(userId int64)
 		source.log.Error("no wordbubble to return for user %d", userId)
 		return nil
 	}
-	var wordbubble WordBubble
+	var wordbubble model.WordBubble
 	if err := row.Scan(&wordbubble.Text); err != nil {
 		source.log.Error("could not map db wordbubble text for user: %s, error: %s", userId, err)
 		return nil

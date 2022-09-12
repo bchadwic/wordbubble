@@ -1,10 +1,11 @@
-package main
+package auth
 
 import (
 	"database/sql"
 	"errors"
 	"time"
 
+	"github.com/bchadwic/wordbubble/util"
 	"github.com/golang-jwt/jwt"
 )
 
@@ -34,12 +35,12 @@ type AuthSource interface {
 }
 type auth struct {
 	source     AuthSource
-	log        Logger
+	log        util.Logger
 	signingKey string
 }
 type authSource struct {
 	db  *sql.DB
-	log Logger
+	log util.Logger
 }
 
 type tokenClaims struct {
@@ -54,7 +55,7 @@ type refreshToken struct {
 	issuedAt int64
 }
 
-func NewAuthSource(logger Logger) *authSource {
+func NewAuthSource(logger util.Logger) *authSource {
 	panicker := func(err error) {
 		if err != nil {
 			panic(err)
@@ -73,7 +74,7 @@ func NewAuthSource(logger Logger) *authSource {
 	return &authSource{db, logger}
 }
 
-func NewAuth(source AuthSource, logger Logger, signingKey string) *auth {
+func NewAuth(source AuthSource, logger util.Logger, signingKey string) *auth {
 	return &auth{source, logger, signingKey}
 }
 
