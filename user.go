@@ -17,79 +17,80 @@ type User struct {
 }
 
 type Users interface {
-	AddUser(logger Logger, user *User) error
-	AuthenticateUser(logger Logger, user *User) error
-	ResolveUserIdFromValue(logger Logger, userStr string) (int64, error)
+	AddUser(user *User) error
+	AuthenticateUser(user *User) error
+	ResolveUserIdFromValue(userStr string) (int64, error)
 	// validate password based on the 6 characters, 1 upper, 1 lower, 1 number, 1 special character
 	// error is safe to return to consumer as a response message
-	ValidPassword(logger Logger, password string) error
+	ValidPassword(password string) error
 	// validate user based on whether the user exists with either the username or email
 	// also be sure to check that they are both valid inputs
-	ValidUser(logger Logger, user *User) error
+	ValidUser(user *User) error
 }
 
 type users struct {
 	source DataSource
+	logger Logger
 }
 
-func NewUsersService(source DataSource) *users {
-	return &users{source}
+func NewUsersService(source DataSource, logger Logger) *users {
+	return &users{source, logger}
 }
 
-func (users *users) AddUser(logger Logger, user *User) error {
-	logger.Info("users.AddUser: inserting new user %s", user.Username)
+func (users *users) AddUser(user *User) error {
+	users.logger.Info("inserting new user %s", user.Username)
 
-	logger.Info("users.AddUser: password unencrypted %s", user.Password)
+	users.logger.Info("password unencrypted %s", user.Password)
 	var passwordBytes = []byte(user.Password)
 	hashedPasswordBytes, err := bcrypt.GenerateFromPassword(passwordBytes, bcrypt.DefaultCost)
-	logger.Info("users.AddUser: password encrypted %s", hashedPasswordBytes)
+	users.logger.Info("password encrypted %s", hashedPasswordBytes)
 	if err != nil {
-		logger.Error("users.AddUser: bcrypt error, could not add user %s", err)
+		users.logger.Error("bcrypt error, could not add user %s", err)
 		return err // bcrypt err'd out, can't continue
 	}
 
 	user.Password = string(hashedPasswordBytes)
-	logger.Info("users.AddUser: successfully hashed password")
-	id, err := users.source.AddUser(logger, user)
+	users.logger.Info("successfully hashed password")
+	id, err := users.source.AddUser(user)
 	if err != nil {
-		logger.Error("users.AddUser: could not add user %s", err)
+		users.logger.Error("could not add user %s", err)
 		return err
 	}
 	user.UserId = id
 	return nil
 }
 
-func (users *users) AuthenticateUser(logger Logger, user *User) error {
-	logger.Info("users.AuthenticateUser: verifying %s Token credentials", user.Username)
+func (users *users) AuthenticateUser(user *User) error {
+	users.logger.Info("verifying %s Token credentials", user.Username)
 
-	dbUser, err := users.source.GetAuthenticatedUserFromUsername(logger, user)
+	dbUser, err := users.source.GetAuthenticatedUserFromUsername(user)
 	if err != nil {
-		logger.Error("users.AuthenticateUser: could not retrieve user from database %s", err)
+		users.logger.Error("could not retrieve user from database %s", err)
 		return err // could not find the user by username
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(dbUser.Password), []byte(user.Password)); err != nil {
-		logger.Error("users.AuthenticateUser: password did not match hashed password %s", err)
+		users.logger.Error("password did not match hashed password %s", err)
 		return err // db password and the password passed did not match
 	}
 
-	logger.Info("users.AuthenticateUser: user %s is verified to be who they say they are", user.Username)
+	users.logger.Info("user %s is verified to be who they say they are", user.Username)
 	user.UserId = dbUser.UserId
 	return nil // successfully authenticated
 }
 
 // resolves a userId from either a username or an email
-func (users *users) ResolveUserIdFromValue(logger Logger, userStr string) (int64, error) {
+func (users *users) ResolveUserIdFromValue(userStr string) (int64, error) {
 	if strings.ContainsRune(userStr, '@') {
 		// TODO validate that this is a valid email before reaching out to datasource
-		logger.Info("users.ResolveUserIdFromValue: string passed is likely to be an email: %s", userStr)
-		return users.source.ResolveUserIdFromEmail(logger, userStr)
+		users.logger.Info("string passed is likely to be an email: %s", userStr)
+		return users.source.ResolveUserIdFromEmail(userStr)
 	}
 	// TODO validate that this is a valid username before reaching out to datasource
-	logger.Info("users.ResolveUserIdFromValue: string passed is likely to be an username: %s", userStr)
-	return users.source.ResolveUserIdFromUsername(logger, userStr)
+	users.logger.Info("string passed is likely to be an username: %s", userStr)
+	return users.source.ResolveUserIdFromUsername(userStr)
 }
 
-func (users *users) ValidPassword(logger Logger, password string) error {
+func (users *users) ValidPassword(password string) error {
 	var hasMinLen, hasUpper, hasLower, hasNumber, hasSpecial bool
 	if len(password) > minPasswordLength {
 		hasMinLen = true
@@ -144,7 +145,7 @@ func (users *users) ValidPassword(logger Logger, password string) error {
 	return fmt.Errorf(errStr + "and " + last)
 }
 
-func (users *users) ValidUser(logger Logger, user *User) error {
+func (users *users) ValidUser(user *User) error {
 	username, email := user.Username, user.Email
 
 	// validation
@@ -167,10 +168,10 @@ func (users *users) ValidUser(logger Logger, user *User) error {
 	}
 
 	// lookups
-	if _, err := users.source.GetUserFromEmail(logger, email); err == nil {
+	if _, err := users.source.GetUserFromEmail(email); err == nil {
 		return fmt.Errorf("a user already exists with this email")
 	}
-	if _, err := users.source.GetUserFromUsername(logger, username); err == nil {
+	if _, err := users.source.GetUserFromUsername(username); err == nil {
 		return fmt.Errorf("the user '%s' already exists", username)
 	}
 	return nil
