@@ -33,7 +33,7 @@ func (app *App) Signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := app.users.ValidPassword(user.Password); err != nil {
+	if err := ValidPassword(user.Password); err != nil {
 		app.respond(err.Error(), http.StatusBadRequest, w)
 		return
 	}
@@ -49,13 +49,13 @@ func (app *App) Signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	accessToken, err := app.auth.GenerateAccessToken(user.UserId)
+	accessToken, err := app.auth.GenerateAccessToken(user.Id)
 	if err != nil {
 		app.respond(err.Error(), http.StatusInternalServerError, w)
 		return
 	}
 
-	refreshToken, err := app.auth.GenerateRefreshToken(user.UserId)
+	refreshToken, err := app.auth.GenerateRefreshToken(user.Id)
 	if err != nil {
 		app.respond(err.Error(), http.StatusInternalServerError, w)
 		return
@@ -93,13 +93,13 @@ func (app *App) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	accessToken, err := app.auth.GenerateAccessToken(user.UserId)
+	accessToken, err := app.auth.GenerateAccessToken(user.Id)
 	if err != nil {
 		app.respond(err.Error(), http.StatusInternalServerError, w)
 		return
 	}
 
-	refreshToken, err := app.auth.GenerateRefreshToken(user.UserId)
+	refreshToken, err := app.auth.GenerateRefreshToken(user.Id)
 	if err != nil {
 		app.respond(err.Error(), http.StatusInternalServerError, w)
 		return
@@ -238,33 +238,32 @@ func (app *App) Pop(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var identity struct {
+	var reqBody struct {
 		UserStr string `json:"user"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&identity); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
 		logger.Error("could not decode identity from body: %s", err)
 		app.respond("could not parse a user from request body", http.StatusBadRequest, w)
 		return
 	}
 
-	userId, err := app.users.ResolveUserIdFromValue(identity.UserStr)
-	if err != nil {
-		app.respond(err.Error(), http.StatusBadRequest, w)
+	user := app.users.GetUserFromUserString(reqBody.UserStr)
+	if user == nil {
+		app.respond(fmt.Sprintf("could not resolve user `%s`", reqBody.UserStr), http.StatusBadRequest, w)
 		return
 	}
 
-	wordbubble, err := app.wbs.RemoveAndReturnLatestWordBubbleForUser(userId)
-	if err != nil {
-		app.respond(err.Error(), http.StatusInternalServerError, w)
-		return
-	}
-
+	wordbubble := app.wbs.RemoveAndReturnLatestWordBubbleForUserId(user.Id)
 	if wordbubble == nil {
-		logger.Warn("no wordbubble was found for user %d", userId)
-		app.respond("", http.StatusNoContent, w)
+		app.respond(fmt.Sprintf("an internal error occurred while fetching wordbubble for %s", reqBody.UserStr), http.StatusInternalServerError, w)
 		return
 	}
 
-	logger.Info("successfully popped a wordbubble for %d", userId)
+	if wordbubble.Text == "" {
+		app.respond(fmt.Sprintf("no wordbubble found for %s", reqBody.UserStr), http.StatusNoContent, w)
+		return
+	}
+
+	logger.Info("successfully popped a wordbubble for %d", user.Id)
 	app.respond(wordbubble.Text, http.StatusOK, w)
 }
