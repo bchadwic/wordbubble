@@ -5,10 +5,15 @@ import (
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/bchadwic/wordbubble/auth"
+	"github.com/bchadwic/wordbubble/user"
+	"github.com/bchadwic/wordbubble/util"
+	"github.com/bchadwic/wordbubble/wb"
 )
 
-var newLogger = func(namespace string) Logger {
-	return NewLogger(namespace, os.Getenv("WB_LOG_LEVEL"))
+var newLogger = func(namespace string) util.Logger {
+	return util.NewLogger(namespace, os.Getenv("WB_LOG_LEVEL"))
 }
 
 var port = func() string {
@@ -19,13 +24,13 @@ var port = func() string {
 }()
 
 func main() {
-	dataSource := NewDataSource(newLogger("datasource"))
-	authSource := NewAuthSource(newLogger("authsource"))
+	dataSource := wb.NewDataSource(newLogger("datasource"))
+	authSource := auth.NewAuthSource(newLogger("authsource"))
 	app := &App{
 		newLogger("app"),
-		NewAuth(authSource, newLogger("auth"), os.Getenv("WB_SIGNING_KEY")),
-		NewUsersService(dataSource, newLogger("users")),
-		NewWordBubblesService(dataSource, newLogger("wordbubbles")),
+		auth.NewAuth(authSource, newLogger("auth"), os.Getenv("WB_SIGNING_KEY")),
+		user.NewUsersService(dataSource, newLogger("users")),
+		wb.NewWordBubblesService(dataSource, newLogger("wordbubbles")),
 	}
 
 	http.HandleFunc("/signup", app.Signup)
@@ -37,7 +42,7 @@ func main() {
 	logger := newLogger("main")
 	logger.Info("starting server on port %s", port)
 	go func() {
-		for range time.Tick(RefreshTokenCleanerRate) {
+		for range time.Tick(auth.RefreshTokenCleanerRate) {
 			authSource.CleanupExpiredRefreshTokens()
 		}
 	}()

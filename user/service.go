@@ -3,35 +3,31 @@ package user
 import (
 	"fmt"
 
+	"github.com/bchadwic/wordbubble/model"
+	"github.com/bchadwic/wordbubble/util"
+	"github.com/bchadwic/wordbubble/wb"
 	"golang.org/x/crypto/bcrypt"
 )
 
-type User struct {
-	Id       int64
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
 type Users interface {
 	// add a new user
-	AddUser(user *User) error
+	AddUser(user *model.User) error
 	// retrieve everything about a user, except sensitive info, using a string that could be a username or an email
-	RetrieveUserByString(userStr string) *User
+	RetrieveUserByString(userStr string) *model.User
 	// retrieve everything about a user using by a string that could be a username or an email and the user's unencrypted password
-	RetrieveAuthenticatedUserByString(userStr, password string) *User
+	RetrieveAuthenticatedUserByString(userStr, password string) *model.User
 }
 
 type users struct {
-	source DataSource
-	logger Logger
+	source wb.DataSource
+	logger util.Logger
 }
 
-func NewUsersService(source DataSource, logger Logger) *users {
+func NewUsersService(source wb.DataSource, logger util.Logger) *users {
 	return &users{source, logger}
 }
 
-func (users *users) AddUser(user *User) error {
+func (users *users) AddUser(user *model.User) error {
 	// super inefficient to do two calls into the database to check existence, then another to insert,
 	// but this doesn't get called often. Might come back
 	if users.source.RetrieveUserByString(user.Email) != nil {
@@ -56,13 +52,13 @@ func (users *users) AddUser(user *User) error {
 	return nil
 }
 
-func (users *users) RetrieveUserByString(userStr string) *User {
+func (users *users) RetrieveUserByString(userStr string) *model.User {
 	user := users.source.RetrieveUserByString(userStr)
 	user.Password = ""
 	return user
 }
 
-func (users *users) RetrieveAuthenticatedUserByString(userStr, password string) *User {
+func (users *users) RetrieveAuthenticatedUserByString(userStr, password string) *model.User {
 	user := users.source.RetrieveUserByString(userStr)
 	if user == nil {
 		users.logger.Error("couldn't retrieve user by string, user: %s", userStr)

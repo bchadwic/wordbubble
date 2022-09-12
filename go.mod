@@ -1,4 +1,4 @@
-module github.com/bchadwic/wb
+module github.com/bchadwic/wordbubble
 
 go 1.18
 
