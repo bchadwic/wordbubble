@@ -20,18 +20,15 @@ func (app *App) respond(response string, statusCode int, w http.ResponseWriter) 
 }
 
 func (app *App) Signup(w http.ResponseWriter, r *http.Request) {
-	logger := app.logger
-	logger.Info("handling request")
-
 	if r.Method != http.MethodPost {
-		logger.Error("invalid http method: %s", r.Method)
+		app.logger.Error("invalid http method: %s", r.Method)
 		app.respond("invalid http method", http.StatusMethodNotAllowed, w)
 		return
 	}
 
 	var user User
 	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
-		logger.Error("could not decode user from body: %s", err)
+		app.logger.Error("could not decode user from body: %s", err)
 		app.respond("could not parse a user from the request body", http.StatusBadRequest, w)
 		return
 	}
@@ -68,7 +65,7 @@ func (app *App) Signup(w http.ResponseWriter, r *http.Request) {
 		RefreshToken string `json:"refresh_token"`
 		AccessToken  string `json:"access_token"`
 	}{refreshToken, accessToken}
-	logger.Info("generated token was successful, sending back token response")
+	app.logger.Info("generated token was successful, sending back token response")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(resp)
 }

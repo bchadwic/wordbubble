@@ -38,19 +38,13 @@ func NewUsersService(source DataSource, logger Logger) *users {
 }
 
 func (users *users) AddUser(user *User) error {
-	users.logger.Info("inserting new user %s", user.Username)
-
-	users.logger.Info("password unencrypted %s", user.Password)
 	var passwordBytes = []byte(user.Password)
 	hashedPasswordBytes, err := bcrypt.GenerateFromPassword(passwordBytes, bcrypt.DefaultCost)
-	users.logger.Info("password encrypted %s", hashedPasswordBytes)
 	if err != nil {
 		users.logger.Error("bcrypt error, could not add user %s", err)
 		return err // bcrypt err'd out, can't continue
 	}
-
 	user.Password = string(hashedPasswordBytes)
-	users.logger.Info("successfully hashed password")
 	id, err := users.source.AddUser(user)
 	if err != nil {
 		users.logger.Error("could not add user %s", err)
@@ -61,8 +55,6 @@ func (users *users) AddUser(user *User) error {
 }
 
 func (users *users) AuthenticateUser(user *User) error {
-	users.logger.Info("verifying %s Token credentials", user.Username)
-
 	dbUser, err := users.source.GetAuthenticatedUserFromUsername(user)
 	if err != nil {
 		users.logger.Error("could not retrieve user from database %s", err)
@@ -72,8 +64,6 @@ func (users *users) AuthenticateUser(user *User) error {
 		users.logger.Error("password did not match hashed password %s", err)
 		return err // db password and the password passed did not match
 	}
-
-	users.logger.Info("user %s is verified to be who they say they are", user.Username)
 	user.UserId = dbUser.UserId
 	return nil // successfully authenticated
 }
@@ -82,11 +72,9 @@ func (users *users) AuthenticateUser(user *User) error {
 func (users *users) ResolveUserIdFromValue(userStr string) (int64, error) {
 	if strings.ContainsRune(userStr, '@') {
 		// TODO validate that this is a valid email before reaching out to datasource
-		users.logger.Info("string passed is likely to be an email: %s", userStr)
 		return users.source.ResolveUserIdFromEmail(userStr)
 	}
 	// TODO validate that this is a valid username before reaching out to datasource
-	users.logger.Info("string passed is likely to be an username: %s", userStr)
 	return users.source.ResolveUserIdFromUsername(userStr)
 }
 

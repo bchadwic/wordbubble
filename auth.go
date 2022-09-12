@@ -82,8 +82,6 @@ func NewAuth(source AuthSource, logger Logger, signingKey string) *auth {
 
 // TODO combine GenerateAccessToken and GenerateRefreshToken?
 func (auth *auth) GenerateAccessToken(userId int64) (string, error) {
-	auth.log.Info("generating access token for user: %d", userId)
-
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &tokenClaims{
 		jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(accessTokenTimeLimit).Unix(),
@@ -96,13 +94,10 @@ func (auth *auth) GenerateAccessToken(userId int64) (string, error) {
 		auth.log.Error("failed to create access token for user: %d, error: %s", userId, err)
 		return "", errors.New("failed to sign and generate an access token")
 	}
-	auth.log.Info("successfully generated a new access token for user: %d", userId)
 	return signedToken, nil
 }
 
 func (auth *auth) GenerateRefreshToken(userId int64) (string, error) {
-	auth.log.Info("generating refresh token for user: %d", userId)
-
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &tokenClaims{
 		jwt.StandardClaims{},
 		userId,
@@ -115,7 +110,6 @@ func (auth *auth) GenerateRefreshToken(userId int64) (string, error) {
 	if err := auth.source.StoreRefreshToken(userId, signedToken); err != nil {
 		return "", err
 	}
-	auth.log.Info("successfully generated a new refresh token for user: %d", userId)
 	return signedToken, nil
 }
 
@@ -133,7 +127,7 @@ func (auth *auth) GetUserIdFromTokenString(tokenStr string) (int64, error) {
 		return 0, errors.New("access token is expired")
 	}
 	if !token.Valid { // only applicable to access tokens
-		auth.log.Warn("token is expired for user: %d, error: %s", tokenClaims.UserId, err)
+		auth.log.Error("token is expired for user: %d, error: %s", tokenClaims.UserId, err)
 		return 0, errors.New("access token is expired")
 	}
 	return tokenClaims.UserId, nil
@@ -153,22 +147,17 @@ func (auth *auth) VerifyTokenAgainstAuthSource(userId int64, tokenStr string) (i
 }
 
 func (auth *auth) GetOrCreateLatestRefreshToken(userId int64) string {
-	auth.log.Info("GetOrCreateLatestRefreshToken: grabbing the latest token in the database for user: %d", userId)
 	token := auth.source.GetLatestRefreshToken(userId)
 	if token != nil { // if there is a token that isn't close to dying, use that
 		if timeRemaining := time.Now().Unix() - token.issuedAt; timeRemaining > ImminentExpirationWindow {
 			return token.string
 		}
-	}
-	// otherwise create a new one
-	auth.log.Info("GetOrCreateLatestRefreshToken: generating a new refresh token for user: %d", userId)
+	} // otherwise create a new one
 	newRefreshToken, _ := auth.GenerateRefreshToken(userId)
 	return newRefreshToken
 }
 
 func (source *authSource) StoreRefreshToken(userId int64, refreshToken string) error {
-	source.log.Info("storing new token for user: %d", userId)
-
 	stmt, err := source.db.Prepare(`INSERT INTO tokens (user_id, refresh_token, issued_at) VALUES (?, ?, ?)`)
 	if err != nil {
 		source.log.Error("could not store token for user: %d, error: %s", userId, err)
@@ -179,13 +168,10 @@ func (source *authSource) StoreRefreshToken(userId int64, refreshToken string) e
 		source.log.Error("could not execute statement for user: %d, error: %s", err)
 		return errors.New("could not successfully store refresh token on server")
 	}
-	source.log.Info("successfully stored new refresh token for user: %d", userId)
 	return nil
 }
 
 func (source *authSource) ValidateRefreshToken(userId int64, refreshToken string) (int64, error) {
-	source.log.Info("validating refresh token for user: %d", userId)
-
 	stmt, err := source.db.Prepare(`SELECT issued_at FROM tokens WHERE user_id = ? AND refresh_token = ?`)
 	if err != nil {
 		source.log.Error("could not validate token for user: %d:, error: %s", userId, err)
@@ -206,13 +192,10 @@ func (source *authSource) ValidateRefreshToken(userId int64, refreshToken string
 		source.log.Error("could not map rows for user: %d, error: %s", userId, err)
 		return 0, errors.New("could not validate issued time of refresh token, please login again")
 	}
-	source.log.Info("successfully matched refresh token sent with a token found in db for user: %d", userId)
 	return issuedAt, nil
 }
 
 func (source *authSource) RemoveRefreshToken(userId int64, refreshToken string) error {
-	source.log.Info("removing refresh token for user: %d", userId)
-
 	stmt, err := source.db.Prepare(`DELETE FROM tokens WHERE user_id = ? AND refresh_token = ?`)
 	if err != nil {
 		source.log.Error("could not remove token for user: %d:, error: %s", userId, err)
@@ -232,13 +215,10 @@ func (source *authSource) RemoveRefreshToken(userId int64, refreshToken string) 
 		source.log.Error("no records were deleted %d", userId)
 		return errors.New("could not successfully delete refresh token")
 	}
-	source.log.Info("successfully deleted refresh token for user: %d", userId)
 	return nil
 }
 
-// TODO fix me
 func (source *authSource) CleanupExpiredRefreshTokens() {
-	source.log.Info("cleaning up tokens than the refreshTokenTimeLimit: %d", refreshTokenTimeLimit)
 	stmt, err := source.db.Prepare(cleanupExpiredRefreshTokensStatement)
 	if err != nil {
 		source.log.Error("could not execute delete tokens: error: %s", err)
@@ -254,12 +234,10 @@ func (source *authSource) CleanupExpiredRefreshTokens() {
 		source.log.Error("could not successfully determine the amount of tokens that were deleted, error: %s", err)
 		return
 	}
-	source.log.Info("successfully deleted %d tokens", amt)
+	source.log.Info("expired refresh token cleaner interval: %gs, deleted: %d tokens", RefreshTokenCleanerRate.Seconds(), amt)
 }
 
 func (source *authSource) GetLatestRefreshToken(userId int64) *refreshToken {
-	source.log.Info("getting the latest token for user: %d", userId)
-
 	stmt, err := source.db.Prepare(`SELECT refresh_token, issued_at FROM tokens WHERE user_id = ? ORDER BY issued_at DESC LIMIT 1`)
 	if err != nil {
 		source.log.Error("could not get latest refresh token for user: %d:, error: %s", userId, err)
@@ -281,7 +259,6 @@ func (source *authSource) GetLatestRefreshToken(userId int64) *refreshToken {
 		source.log.Error("could not map the latest refresh token for user: %d, error: %s", userId, err)
 		return nil
 	}
-	source.log.Info("successfully matched refresh token sent with a token found in db for user: %d", userId)
 	return &refreshToken{
 		val,
 		issuedAt,
