@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/bchadwic/wordbubble/internal/auth"
 	"github.com/bchadwic/wordbubble/internal/user"
@@ -14,31 +15,34 @@ import (
 )
 
 type App struct {
-	auth   auth.Auth
-	users  user.Users
-	wbs    wb.WordBubbles
-	logger util.Logger
+	auth auth.AuthService
+	users user.UserService
+	wordbubbles   wb.WordBubbleService
+	log         util.Logger
 }
 
-func NewApp(auth auth.Auth, users user.Users, wbs wb.WordBubbles, logger util.Logger) *App {
-	return &App{auth, users, wbs, logger}
+func NewApp(authService auth.AuthService, userService user.UserService, wbService wb.WordBubbleService, log util.Logger) *App {
+	return &App{authService, userService, wbService, log}
 }
 
-func (app *App) respond(response string, statusCode int, w http.ResponseWriter) {
-	w.WriteHeader(statusCode)
-	w.Write([]byte(response + "\n")) // temporary, soon to be a struct
+func (app *App) BackgroundCleaner(authCleaner auth.AuthCleaner) {
+	go func() {
+		for range time.Tick(auth.RefreshTokenCleanerRate) {
+			authCleaner.CleanupExpiredRefreshTokens()
+		}
+	}()
 }
 
 func (app *App) Signup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		app.logger.Error("invalid http method: %s", r.Method)
+		app.log.Error("invalid http method: %s", r.Method)
 		app.respond("invalid http method", http.StatusMethodNotAllowed, w)
 		return
 	}
 
 	var user model.User
 	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
-		app.logger.Error("could not decode user from body: %s", err)
+		app.log.Error("could not decode user from body: %s", err)
 		app.respond("could not parse a user from the request body", http.StatusBadRequest, w)
 		return
 	}
@@ -69,14 +73,14 @@ func (app *App) Signup(w http.ResponseWriter, r *http.Request) {
 		RefreshToken string `json:"refresh_token"`
 		AccessToken  string `json:"access_token"`
 	}{refreshToken, accessToken}
-	app.logger.Info("generated token was successful, sending back token response")
+	app.log.Info("generated token was successful, sending back token response")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(resp)
 }
 
 func (app *App) Login(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		app.logger.Error("invalid http method: %s", r.Method)
+		app.log.Error("invalid http method: %s", r.Method)
 		app.respond("invalid http method", http.StatusMethodNotAllowed, w)
 		return
 	}
@@ -86,7 +90,7 @@ func (app *App) Login(w http.ResponseWriter, r *http.Request) {
 		password string `json:"password"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
-		app.logger.Error("could not decode user from body: %s", err)
+		app.log.Error("could not decode user from body: %s", err)
 		app.respond("could not parse a user from the request body", http.StatusBadRequest, w)
 		return
 	}
@@ -113,14 +117,14 @@ func (app *App) Login(w http.ResponseWriter, r *http.Request) {
 		RefreshToken string `json:"refresh_token"`
 		AccessToken  string `json:"access_token"`
 	}{refreshToken, accessToken}
-	app.logger.Info("generated token was successful, sending back token response")
+	app.log.Info("generated token was successful, sending back token response")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(resp)
 }
 
 func (app *App) Token(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		app.logger.Error("invalid http method: %s", r.Method)
+		app.log.Error("invalid http method: %s", r.Method)
 		app.respond("invalid http method", http.StatusMethodNotAllowed, w)
 		return
 	}
@@ -129,7 +133,7 @@ func (app *App) Token(w http.ResponseWriter, r *http.Request) {
 		RefreshToken string `json:"refresh_token"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
-		app.logger.Error("could not decode refresh token from body, error: %s", err)
+		app.log.Error("could not decode refresh token from body, error: %s", err)
 		app.respond("could not parse refresh token from the request body", http.StatusBadRequest, w)
 		return
 	}
@@ -162,28 +166,28 @@ func (app *App) Token(w http.ResponseWriter, r *http.Request) {
 		RefreshToken string `json:"refresh_token,omitempty"`
 		AccessToken  string `json:"access_token"`
 	}{latestRefreshToken, accessToken}
-	app.logger.Info("generated token was successful, sending back token response")
+	app.log.Info("generated token was successful, sending back token response")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(resp)
 }
 
 func (app *App) Push(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		app.logger.Error("invalid http method: %s", r.Method)
+		app.log.Error("invalid http method: %s", r.Method)
 		app.respond("invalid http method", http.StatusMethodNotAllowed, w)
 		return
 	}
 
 	authValue := r.Header.Get("authorization")
 	if authValue == "" {
-		app.logger.Error("authorization was not passed")
+		app.log.Error("authorization was not passed")
 		app.respond("authorization header is required for pushing a wordbubble", http.StatusUnauthorized, w)
 		return
 	}
 
 	splitToken := strings.Split(authValue, "Bearer ")
 	if len(splitToken) < 2 {
-		app.logger.Error("authorization value didn't specifiy token type as bearer")
+		app.log.Error("authorization value didn't specifiy token type as bearer")
 		app.respond("a bearer token is required for pushing a wordbubble", http.StatusUnauthorized, w)
 		return
 	}
@@ -197,39 +201,39 @@ func (app *App) Push(w http.ResponseWriter, r *http.Request) {
 
 	var wb model.WordBubble // finally we are authenticated! Let's insert a wordbubble
 	if err = json.NewDecoder(r.Body).Decode(&wb); err != nil {
-		app.logger.Error("could not decode wordbubble from body: %s", err)
+		app.log.Error("could not decode wordbubble from body: %s", err)
 		app.respond("could not parse a wordbubble from request body", http.StatusBadRequest, w)
 		return
 	}
 
-	if err = app.wbs.ValidWordBubble(&wb); err != nil {
+	if err = app.wordbubbles.ValidWordBubble(&wb); err != nil {
 		app.respond(err.Error(), http.StatusBadRequest, w)
 		return
 	}
 
-	if err = app.wbs.UserHasAvailability(userId); err != nil {
+	if err = app.wordbubbles.UserHasAvailability(userId); err != nil {
 		app.respond(err.Error(), http.StatusConflict, w)
 		return
 	}
 
-	if err = app.wbs.AddNewWordBubble(userId, &wb); err != nil {
+	if err = app.wordbubbles.AddNewWordBubble(userId, &wb); err != nil {
 		app.respond(err.Error(), http.StatusInternalServerError, w)
 		return
 	}
 
 	if wb.Text == "teapot" {
-		app.logger.Info("found ourselves a teapot")
+		app.log.Info("found ourselves a teapot")
 		app.respond("here is some tea for you", http.StatusTeapot, w)
 		return
 	}
 
-	app.logger.Info("successfully created a wordbubble for %d", userId)
+	app.log.Info("successfully created a wordbubble for %d", userId)
 	app.respond("thank you!", http.StatusCreated, w)
 }
 
 func (app *App) Pop(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
-		app.logger.Error("invalid http method: %s", r.Method)
+		app.log.Error("invalid http method: %s", r.Method)
 		app.respond("invalid http method", http.StatusMethodNotAllowed, w)
 		return
 	}
@@ -238,7 +242,7 @@ func (app *App) Pop(w http.ResponseWriter, r *http.Request) {
 		UserStr string `json:"user"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
-		app.logger.Error("could not decode identity from body: %s", err)
+		app.log.Error("could not decode identity from body: %s", err)
 		app.respond("could not parse a user from request body", http.StatusBadRequest, w)
 		return
 	}
@@ -249,7 +253,7 @@ func (app *App) Pop(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	wordbubble := app.wbs.RemoveAndReturnLatestWordBubbleForUserId(user.Id)
+	wordbubble := app.wordbubbles.RemoveAndReturnLatestWordBubbleForUserId(user.Id)
 	if wordbubble == nil {
 		app.respond(fmt.Sprintf("an internal error occurred while fetching wordbubble for %s", reqBody.UserStr), http.StatusInternalServerError, w)
 		return
@@ -260,6 +264,11 @@ func (app *App) Pop(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	app.logger.Info("successfully popped a wordbubble for %d", user.Id)
+	app.log.Info("successfully popped a wordbubble for %d", user.Id)
 	app.respond(wordbubble.Text, http.StatusOK, w)
+}
+
+func (app *App) respond(response string, statusCode int, w http.ResponseWriter) {
+	w.WriteHeader(statusCode)
+	w.Write([]byte(response + "\n")) // temporary, soon to be a struct
 }
