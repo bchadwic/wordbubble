@@ -23,11 +23,12 @@ type Logger interface {
 }
 
 type logger struct {
-	logger   *log.Logger
-	logLevel logLevel
+	*log.Logger
+	namespace string
+	logLevel  logLevel
 }
 
-func NewLogger(strLogLevel string) *logger {
+func NewLogger(namespace, strLogLevel string) *logger {
 	levelAssigner := func(s string) logLevel {
 		switch s {
 		case "NONE":
@@ -45,36 +46,33 @@ func NewLogger(strLogLevel string) *logger {
 		}
 	}
 
-	return &logger{
-		logger:   log.Default(),
-		logLevel: levelAssigner(strLogLevel),
-	}
+	return &logger{log.Default(), namespace, levelAssigner(strLogLevel)}
 }
 
 func (l *logger) Error(s string, a ...any) {
 	if l.logLevel < ERROR {
 		return
 	}
-	l.logger.Printf("ERROR: %s\n", fmt.Sprintf(s, a...))
+	l.Printf("ERROR: %s - %s\n", l.namespace, fmt.Sprintf(s, a...))
 }
 
 func (l *logger) Info(s string, a ...any) {
 	if l.logLevel < INFO {
 		return
 	}
-	l.logger.Printf("INFO: %s\n", fmt.Sprintf(s, a...))
+	l.Printf("INFO: %s - %s\n", l.namespace, fmt.Sprintf(s, a...))
 }
 
 func (l *logger) Warn(s string, a ...any) {
 	if l.logLevel < WARN {
 		return
 	}
-	l.logger.Printf("WARN: %s\n", fmt.Sprintf(s, a...))
+	l.Printf("WARN: %s - %s\n", l.namespace, fmt.Sprintf(s, a...))
 }
 
 func (l *logger) Debug(s string, a ...any) {
 	if l.logLevel < DEBUG {
 		return
 	}
-	l.logger.Printf("DEBUG: %s\n", fmt.Sprintf(s, a...))
+	l.Printf("DEBUG: %s - %s\n", l.namespace, fmt.Sprintf(s, a...))
 }
