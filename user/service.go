@@ -1,6 +1,8 @@
-package main
+package user
 
 import (
+	"fmt"
+
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -30,12 +32,14 @@ func NewUsersService(source DataSource, logger Logger) *users {
 }
 
 func (users *users) AddUser(user *User) error {
-
-
-	// need to check if this user already exists before inserting
-
-
-
+	// super inefficient to do two calls into the database to check existence, then another to insert,
+	// but this doesn't get called often. Might come back
+	if users.source.RetrieveUserByString(user.Email) != nil {
+		return fmt.Errorf("user with the email %s already exists", user.Email)
+	}
+	if users.source.RetrieveUserByString(user.Username) != nil {
+		return fmt.Errorf("%s already exists", user.Username)
+	}
 	var passwordBytes = []byte(user.Password)
 	hashedPasswordBytes, err := bcrypt.GenerateFromPassword(passwordBytes, bcrypt.DefaultCost)
 	if err != nil {
