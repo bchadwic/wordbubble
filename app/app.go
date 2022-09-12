@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"encoding/json"
@@ -6,18 +6,22 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/bchadwic/wordbubble/auth"
+	"github.com/bchadwic/wordbubble/internal/auth"
+	"github.com/bchadwic/wordbubble/internal/user"
+	"github.com/bchadwic/wordbubble/internal/wb"
 	"github.com/bchadwic/wordbubble/model"
-	"github.com/bchadwic/wordbubble/user"
 	"github.com/bchadwic/wordbubble/util"
-	"github.com/bchadwic/wordbubble/wb"
 )
 
 type App struct {
-	logger util.Logger
 	auth   auth.Auth
 	users  user.Users
 	wbs    wb.WordBubbles
+	logger util.Logger
+}
+
+func NewApp(auth auth.Auth, users user.Users, wbs wb.WordBubbles, logger util.Logger) *App {
+	return &App{auth, users, wbs, logger}
 }
 
 func (app *App) respond(response string, statusCode int, w http.ResponseWriter) {

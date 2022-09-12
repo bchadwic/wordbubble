@@ -3,9 +3,9 @@ package user
 import (
 	"fmt"
 
+	"github.com/bchadwic/wordbubble/internal/wb"
 	"github.com/bchadwic/wordbubble/model"
 	"github.com/bchadwic/wordbubble/util"
-	"github.com/bchadwic/wordbubble/wb"
 	"golang.org/x/crypto/bcrypt"
 )
 

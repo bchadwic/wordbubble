@@ -6,10 +6,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/bchadwic/wordbubble/auth"
-	"github.com/bchadwic/wordbubble/user"
+	"github.com/bchadwic/wordbubble/app"
+	"github.com/bchadwic/wordbubble/internal/auth"
+	"github.com/bchadwic/wordbubble/internal/user"
+	"github.com/bchadwic/wordbubble/internal/wb"
 	"github.com/bchadwic/wordbubble/util"
-	"github.com/bchadwic/wordbubble/wb"
 )
 
 var newLogger = func(namespace string) util.Logger {
@@ -23,15 +24,16 @@ var port = func() string {
 	return ":8080"
 }()
 
+// MAKE AN INTERNAL PACKAGE FOR ALL OF YOUR SERVICE AND REPO LAYER
 func main() {
 	dataSource := wb.NewDataSource(newLogger("datasource"))
 	authSource := auth.NewAuthSource(newLogger("authsource"))
-	app := &App{
-		newLogger("app"),
+	app := app.NewApp(
 		auth.NewAuth(authSource, newLogger("auth"), os.Getenv("WB_SIGNING_KEY")),
 		user.NewUsersService(dataSource, newLogger("users")),
 		wb.NewWordBubblesService(dataSource, newLogger("wordbubbles")),
-	}
+		newLogger("app"),
+	)
 
 	http.HandleFunc("/signup", app.Signup)
 	http.HandleFunc("/login", app.Login)

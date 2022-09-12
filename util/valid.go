@@ -14,6 +14,7 @@ const (
 	maxEmailLength    = 320
 )
 
+// validate all the fields of a user
 func ValidUser(user *model.User) error {
 	if err := ValidEmail(user.Email); err != nil {
 		return err
