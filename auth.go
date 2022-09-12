@@ -9,9 +9,6 @@ import (
 )
 
 const (
-	minPasswordLength        = 6
-	maxUsernameLength        = 40
-	maxEmailLength           = 320
 	refreshTokenTimeLimit    = 60
 	accessTokenTimeLimit     = 30 * time.Second
 	RefreshTokenCleanerRate  = 30 * time.Second

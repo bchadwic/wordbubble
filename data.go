@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -14,12 +13,11 @@ type DataSource interface {
 	GetAuthenticatedUserFromUsername(user *User) (*User, error)
 	GetUserFromUsername(username string) (*User, error)
 	GetUserFromEmail(email string) (*User, error)
-	ResolveUserIdFromUsername(email string) (int64, error)
-	ResolveUserIdFromEmail(email string) (int64, error)
+
 	// wordbubbles
 	AddNewWordBubble(userId int64, wb *WordBubble) error
 	NumberOfWordBubblesForUser(userId int64) (int64, error)
-	RemoveAndReturnLatestWordBubbleForUser(userId int64) (*WordBubble, error)
+	RemoveAndReturnLatestWordBubbleForUserId(userId int64) *WordBubble
 }
 
 type dataSource struct {
@@ -88,7 +86,7 @@ func (source *dataSource) GetAuthenticatedUserFromUsername(user *User) (*User, e
 		return nil, fmt.Errorf("could not find user with username %s", user.Username)
 	}
 	var dbUser User
-	if err := row.Scan(&dbUser.UserId, &dbUser.Username, &dbUser.Email, &dbUser.Password); err != nil {
+	if err := row.Scan(&dbUser.Id, &dbUser.Username, &dbUser.Email, &dbUser.Password); err != nil {
 		source.log.Error("could not map db user to user struct, user: %s, error: %s", user.Username, err)
 		return nil, fmt.Errorf("could not retrive user information for %s", user.Username)
 	}
@@ -112,7 +110,7 @@ func (source *dataSource) GetUserFromUsername(username string) (*User, error) {
 		return nil, fmt.Errorf("could not find user with username %s", username)
 	}
 	var user User
-	row.Scan(&user.UserId, &user.Username, &user.Email)
+	row.Scan(&user.Id, &user.Username, &user.Email)
 	return &user, nil
 }
 
@@ -134,57 +132,8 @@ func (source *dataSource) GetUserFromEmail(email string) (*User, error) {
 		return nil, fmt.Errorf("could not find user with email %s", email)
 	}
 	var user User
-	row.Scan(&user.UserId, &user.Username, &user.Email)
+	row.Scan(&user.Id, &user.Username, &user.Email)
 	return &user, nil
-}
-
-func (source *dataSource) ResolveUserIdFromUsername(username string) (int64, error) {
-	source.log.Info("retrieving user id for %s", username)
-	stmt, err := source.db.Prepare(`SELECT user_id FROM users WHERE username = ?`)
-	if err != nil {
-		source.log.Error("prepared statement error for getting userId from username: %s, error: %s", username, err)
-		return 0, err
-	}
-	row, err := stmt.Query(username)
-	if err != nil {
-		source.log.Error("querying error for getting userId from username: %s, error: %s", username, err)
-		return 0, err
-	}
-	defer row.Close()
-	if !row.Next() {
-		source.log.Error("could not find user with username: %s", username)
-		return 0, fmt.Errorf("could not find %s", username)
-	}
-	var userId int64
-	if err := row.Scan(&userId); err != nil {
-		source.log.Error("could not map db userId for user: %s, error: %s", username, err)
-		return 0, fmt.Errorf("could not parse identity for %s", username)
-	}
-	return userId, nil
-}
-
-func (source *dataSource) ResolveUserIdFromEmail(email string) (int64, error) {
-	stmt, err := source.db.Prepare(`SELECT user_id FROM users WHERE email = ?`)
-	if err != nil {
-		source.log.Error("prepared statement error for getting userId from email: %s, error: %s", email, err)
-		return 0, err
-	}
-	row, err := stmt.Query(email)
-	if err != nil {
-		source.log.Error("querying error for getting userId from email: %s, error: %s", email, err)
-		return 0, err
-	}
-	defer row.Close()
-	if !row.Next() {
-		source.log.Error("could not find user with email: %s", email)
-		return 0, fmt.Errorf("could not find %s", email)
-	}
-	var userId int64
-	if err := row.Scan(&userId); err != nil {
-		source.log.Error("could not map db userId for user: %s, error: %s", email, err)
-		return 0, fmt.Errorf("could not parse identity for %s", email)
-	}
-	return userId, nil
 }
 
 func (source *dataSource) AddNewWordBubble(userId int64, wb *WordBubble) error {
@@ -226,7 +175,7 @@ func (source *dataSource) NumberOfWordBubblesForUser(userId int64) (int64, error
 	return amt, nil
 }
 
-func (source *dataSource) RemoveAndReturnLatestWordBubbleForUser(userId int64) (*WordBubble, error) {
+func (source *dataSource) RemoveAndReturnLatestWordBubbleForUserId(userId int64) *WordBubble {
 	source.log.Info("removing and returning the last wordbubble for %d", userId)
 	stmt, err := source.db.Prepare(`
 	DELETE FROM wordbubbles WHERE wordbubble_id = ( 
@@ -234,22 +183,22 @@ func (source *dataSource) RemoveAndReturnLatestWordBubbleForUser(userId int64) (
 	) RETURNING text;`)
 	if err != nil {
 		source.log.Error("prepared statement error for removing and returning wordbubble for user: %d, error: %s", userId, err)
-		return nil, err
+		return nil
 	}
 	row, err := stmt.Query(userId)
 	if err != nil {
 		source.log.Error("querying error for removing and returning wordbubble for user: %d, error: %s", userId, err)
-		return nil, err
+		return nil
 	}
 	defer row.Close()
 	if !row.Next() {
 		source.log.Error("no wordbubble to return for user %d", userId)
-		return nil, nil // TODO make this better
+		return nil
 	}
 	var wordbubble WordBubble
 	if err := row.Scan(&wordbubble.Text); err != nil {
 		source.log.Error("could not map db wordbubble text for user: %s, error: %s", userId, err)
-		return nil, errors.New("an error occurred after removing wordbubble from database")
+		return nil
 	}
-	return &wordbubble, nil
+	return &wordbubble
 }

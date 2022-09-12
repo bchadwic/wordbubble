@@ -12,7 +12,7 @@ type WordBubbles interface {
 	AddNewWordBubble(userId int64, wb *WordBubble) error
 	ValidWordBubble(wb *WordBubble) error
 	UserHasAvailability(userId int64) error
-	RemoveAndReturnLatestWordBubbleForUser(userId int64) (*WordBubble, error)
+	RemoveAndReturnLatestWordBubbleForUserId(userId int64) *WordBubble
 }
 
 type wordbubbles struct {
@@ -54,6 +54,6 @@ func (wbs *wordbubbles) ValidWordBubble(wb *WordBubble) error {
 	return nil
 }
 
-func (wbs *wordbubbles) RemoveAndReturnLatestWordBubbleForUser(userId int64) (*WordBubble, error) {
-	return wbs.source.RemoveAndReturnLatestWordBubbleForUser(userId)
+func (wbs *wordbubbles) RemoveAndReturnLatestWordBubbleForUserId(userId int64) *WordBubble {
+	return wbs.source.RemoveAndReturnLatestWordBubbleForUserId(userId)
 }
