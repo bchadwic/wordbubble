@@ -4,7 +4,6 @@ import (
 	"errors"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/bchadwic/wordbubble/app"
 	"github.com/bchadwic/wordbubble/internal/auth"
@@ -24,14 +23,16 @@ var port = func() string {
 	return ":8080"
 }()
 
-// MAKE AN INTERNAL PACKAGE FOR ALL OF YOUR SERVICE AND REPO LAYER
 func main() {
-	dataSource := wb.NewDataSource(newLogger("datasource"))
-	authSource := auth.NewAuthSource(newLogger("authsource"))
+	logger := newLogger("main")
+	wbRepo := wb.NewWordBubbleRepo(newLogger("wb_repo"))
+	usersRepo := user.NewUserRepo(newLogger("users_repo"))
+	authRepo := auth.NewAuthRepo(newLogger("auth_repo"))
+
 	app := app.NewApp(
-		auth.NewAuth(authSource, newLogger("auth"), os.Getenv("WB_SIGNING_KEY")),
-		user.NewUsersService(dataSource, newLogger("users")),
-		wb.NewWordBubblesService(dataSource, newLogger("wordbubbles")),
+		auth.NewAuthService(authRepo, newLogger("auth"), os.Getenv("WB_SIGNING_KEY")),
+		user.NewUserService(usersRepo, newLogger("users")),
+		wb.NewWordBubblesService(wbRepo, newLogger("wordbubbles")),
 		newLogger("app"),
 	)
 
@@ -41,13 +42,10 @@ func main() {
 	http.HandleFunc("/push", app.Push)
 	http.HandleFunc("/pop", app.Pop)
 
-	logger := newLogger("main")
+	logger.Info("starting refresh token cleaner with an interval of: %gs", auth.RefreshTokenCleanerRate.Seconds())
+	app.BackgroundCleaner(authRepo) // TODO make a timer interface to pass in
+
 	logger.Info("starting server on port %s", port)
-	go func() {
-		for range time.Tick(auth.RefreshTokenCleanerRate) {
-			authSource.CleanupExpiredRefreshTokens()
-		}
-	}()
 	err := http.ListenAndServe(port, nil)
 	if errors.Is(err, http.ErrServerClosed) {
 		logger.Info("server closed")
