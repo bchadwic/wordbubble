@@ -2,6 +2,7 @@ package auth
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/bchadwic/wordbubble/util"
@@ -10,7 +11,7 @@ import (
 
 const (
 	refreshTokenTimeLimit    = 60
-	accessTokenTimeLimit     = 30 * time.Second
+	accessTokenTimeLimit     = 10 * time.Second // change me to something quicker
 	RefreshTokenCleanerRate  = 30 * time.Second
 	ImminentExpirationWindow = int64(float64(refreshTokenTimeLimit) * .2)
 )
@@ -48,6 +49,10 @@ func NewAuthService(repo AuthRepo, logger util.Logger, signingKey string) *authS
 
 // TODO combine GenerateAccessToken and GenerateRefreshToken?
 func (svc *authService) GenerateAccessToken(userId int64) (string, error) {
+	iat := time.Now().Unix()
+	exp := time.Now().Add(accessTokenTimeLimit).Unix()
+
+	fmt.Printf("iat: %d\nexp: %d\n", iat, exp)
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &tokenClaims{
 		jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(accessTokenTimeLimit).Unix(),

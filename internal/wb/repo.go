@@ -80,7 +80,6 @@ func (repo *wordBubbleRepo) NumberOfWordBubblesForUser(userId int64) (int64, err
 }
 
 func (repo *wordBubbleRepo) RemoveAndReturnLatestWordBubbleForUserId(userId int64) *model.WordBubble {
-	repo.log.Info("removing and returning the last wordbubble for %d", userId)
 	stmt, err := repo.db.Prepare(`
 	DELETE FROM wordbubbles WHERE wordbubble_id = ( 
 		SELECT wordbubble_id FROM wordbubbles WHERE user_id = ? ORDER BY created_timestamp ASC LIMIT 1
@@ -95,8 +94,7 @@ func (repo *wordBubbleRepo) RemoveAndReturnLatestWordBubbleForUserId(userId int6
 		return nil
 	}
 	defer row.Close()
-	if !row.Next() {
-		repo.log.Error("no wordbubble to return for user %d", userId)
+	if !row.Next() { // not logging because this might not be unexpected behaviour
 		return nil
 	}
 	var wordbubble model.WordBubble

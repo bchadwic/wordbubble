@@ -15,9 +15,9 @@ import (
 )
 
 type App struct {
-	auth auth.AuthService
-	users user.UserService
-	wordbubbles   wb.WordBubbleService
+	auth        auth.AuthService
+	users       user.UserService
+	wordbubbles wb.WordBubbleService
 	log         util.Logger
 }
 
@@ -86,8 +86,8 @@ func (app *App) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var reqBody struct {
-		user     string `json:"user"`
-		password string `json:"password"`
+		User     string `json:"user"`
+		Password string `json:"password"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
 		app.log.Error("could not decode user from body: %s", err)
@@ -95,7 +95,7 @@ func (app *App) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	AuthenticateUser := app.users.RetrieveAuthenticatedUserByString(reqBody.user, reqBody.password)
+	AuthenticateUser := app.users.RetrieveAuthenticatedUserByString(reqBody.User, reqBody.Password)
 	if AuthenticateUser == nil {
 		app.respond("could not authenticate user using credentials passed", http.StatusUnauthorized, w)
 		return
@@ -249,26 +249,27 @@ func (app *App) Pop(w http.ResponseWriter, r *http.Request) {
 
 	user := app.users.RetrieveUserByString(reqBody.UserStr)
 	if user == nil {
-		app.respond(fmt.Sprintf("could not resolve user `%s`", reqBody.UserStr), http.StatusBadRequest, w)
+		app.respond(fmt.Sprintf("could not find user %s", reqBody.UserStr), http.StatusBadRequest, w)
 		return
 	}
 
 	wordbubble := app.wordbubbles.RemoveAndReturnLatestWordBubbleForUserId(user.Id)
 	if wordbubble == nil {
-		app.respond(fmt.Sprintf("an internal error occurred while fetching wordbubble for %s", reqBody.UserStr), http.StatusInternalServerError, w)
-		return
-	}
-
-	if wordbubble.Text == "" {
-		app.respond(fmt.Sprintf("no wordbubble found for %s", reqBody.UserStr), http.StatusNoContent, w)
+		app.log.Warn("could not find to return for user: %d", user.Id)
+		w.WriteHeader(http.StatusNoContent)
 		return
 	}
 
 	app.log.Info("successfully popped a wordbubble for %d", user.Id)
-	app.respond(wordbubble.Text, http.StatusOK, w)
+	writeResponse(w, http.StatusOK, wordbubble)
 }
 
 func (app *App) respond(response string, statusCode int, w http.ResponseWriter) {
 	w.WriteHeader(statusCode)
-	w.Write([]byte(response + "\n")) // temporary, soon to be a struct
+	w.Write([]byte(response)) // temporary, soon to be a struct
+}
+
+func writeResponse(w http.ResponseWriter, statusCode int, resp any) {
+	w.WriteHeader(statusCode)
+	_ = json.NewEncoder(w).Encode(resp)
 }
