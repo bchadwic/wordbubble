@@ -26,7 +26,7 @@ func NewAuthRepo(logger util.Logger) *authRepo {
 			panic(err)
 		}
 	}
-	db, err := sql.Open("sqlite3", "./wb-database.db")
+	db, err := sql.Open("sqlite3", "./wordbubble.db")
 	panicker(err)
 	_, err = db.Exec(`
 	CREATE TABLE IF NOT EXISTS tokens (

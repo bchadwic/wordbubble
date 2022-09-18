@@ -53,7 +53,9 @@ func (svc *userService) AddUser(user *model.User) error {
 
 func (svc *userService) RetrieveUserByString(userStr string) *model.User {
 	user := svc.repo.RetrieveUserByString(userStr)
-	user.Password = ""
+	if user != nil { // sanitize
+		user.Password = ""
+	}
 	return user
 }
 

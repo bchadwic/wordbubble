@@ -2,6 +2,7 @@ package auth
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/bchadwic/wordbubble/util"
@@ -10,7 +11,7 @@ import (
 
 const (
 	refreshTokenTimeLimit    = 60
-	accessTokenTimeLimit     = 30 * time.Second
+	accessTokenTimeLimit     = 10 * time.Second // change me to something quicker
 	RefreshTokenCleanerRate  = 30 * time.Second
 	ImminentExpirationWindow = int64(float64(refreshTokenTimeLimit) * .2)
 )
@@ -48,6 +49,10 @@ func NewAuthService(repo AuthRepo, logger util.Logger, signingKey string) *authS
 
 // TODO combine GenerateAccessToken and GenerateRefreshToken?
 func (svc *authService) GenerateAccessToken(userId int64) (string, error) {
+	iat := time.Now().Unix()
+	exp := time.Now().Add(accessTokenTimeLimit).Unix()
+
+	fmt.Printf("iat: %d\nexp: %d\n", iat, exp)
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &tokenClaims{
 		jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(accessTokenTimeLimit).Unix(),
@@ -64,8 +69,12 @@ func (svc *authService) GenerateAccessToken(userId int64) (string, error) {
 }
 
 func (svc *authService) GenerateRefreshToken(userId int64) (string, error) {
+	now := time.Now()
 	signedToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, &tokenClaims{
-		jwt.StandardClaims{},
+		jwt.StandardClaims{
+			ExpiresAt: now.Add(refreshTokenTimeLimit * time.Second).Unix(),
+			IssuedAt:  now.Unix(),
+		},
 		userId,
 	}).SignedString([]byte(svc.signingKey))
 	if err != nil {
@@ -75,7 +84,7 @@ func (svc *authService) GenerateRefreshToken(userId int64) (string, error) {
 	token := &refreshToken{
 		string:   signedToken,
 		userId:   userId,
-		issuedAt: time.Now().Unix(),
+		issuedAt: now.Unix(),
 	}
 	if err := svc.repo.StoreRefreshToken(token); err != nil {
 		return "", err
