@@ -70,7 +70,10 @@ func (svc *authService) GenerateAccessToken(userId int64) (string, error) {
 
 func (svc *authService) GenerateRefreshToken(userId int64) (string, error) {
 	signedToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, &tokenClaims{
-		jwt.StandardClaims{},
+		jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(refreshTokenTimeLimit * time.Second).Unix(),
+			IssuedAt:  time.Now().Unix(),
+		},
 		userId,
 	}).SignedString([]byte(svc.signingKey))
 	if err != nil {

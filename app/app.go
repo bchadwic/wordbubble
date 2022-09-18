@@ -150,7 +150,6 @@ func (app *App) Token(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Printf("timeBeforeExpiration: %d, ImminentExpirationWindow: %d\n", timeBeforeExpiration, auth.ImminentExpirationWindow)
 	var latestRefreshToken string
 	if timeBeforeExpiration < auth.ImminentExpirationWindow {
 		latestRefreshToken = app.auth.GetOrCreateLatestRefreshToken(userId)
