@@ -3,7 +3,6 @@ package auth
 import (
 	"database/sql"
 	"errors"
-	"time"
 
 	"github.com/bchadwic/wordbubble/util"
 	_ "github.com/mattn/go-sqlite3"
@@ -103,16 +102,16 @@ func (repo *authRepo) GetLatestRefreshToken(userId int64) *refreshToken {
 }
 
 type AuthCleaner interface {
-	CleanupExpiredRefreshTokens()
+	CleanupExpiredRefreshTokens(since int64)
 }
 
-func (repo *authRepo) CleanupExpiredRefreshTokens() {
+func (repo *authRepo) CleanupExpiredRefreshTokens(since int64) {
 	stmt, err := repo.db.Prepare(cleanupExpiredRefreshTokensStatement)
 	if err != nil {
 		repo.log.Error("could not execute delete tokens: error: %s", err)
 		return
 	}
-	rs, err := stmt.Exec(time.Now().Unix() - refreshTokenTimeLimit)
+	rs, err := stmt.Exec(since)
 	if err != nil {
 		repo.log.Error("could not execute delete tokens: error: %s", err)
 		return

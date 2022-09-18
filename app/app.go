@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/bchadwic/wordbubble/internal/auth"
 	"github.com/bchadwic/wordbubble/internal/user"
@@ -19,16 +18,25 @@ type App struct {
 	users       user.UserService
 	wordbubbles wb.WordBubbleService
 	log         util.Logger
+	timer       util.Timer
 }
 
-func NewApp(authService auth.AuthService, userService user.UserService, wbService wb.WordBubbleService, log util.Logger) *App {
-	return &App{authService, userService, wbService, log}
+func NewApp(authService auth.AuthService, userService user.UserService, wbService wb.WordBubbleService, log util.Logger, timer util.Timer) *App {
+	return &App{
+		auth:        authService,
+		users:       userService,
+		wordbubbles: wbService,
+		log:         log,
+		timer:       timer,
+	}
 }
+
+const refreshTokenTimeLimit = 60
 
 func (app *App) BackgroundCleaner(authCleaner auth.AuthCleaner) {
 	go func() {
-		for range time.Tick(auth.RefreshTokenCleanerRate) {
-			authCleaner.CleanupExpiredRefreshTokens()
+		for range app.timer.Tick(auth.RefreshTokenCleanerRate) {
+			authCleaner.CleanupExpiredRefreshTokens(app.timer.Now().Unix() - refreshTokenTimeLimit)
 		}
 	}()
 }
