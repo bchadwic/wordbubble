@@ -21,21 +21,24 @@ type WordBubbleService interface {
 }
 
 type wordBubbleService struct {
-	source WordBubbleRepo
-	log    util.Logger
+	repo WordBubbleRepo
+	log  util.Logger
 }
 
-func NewWordBubblesService(source WordBubbleRepo, logger util.Logger) *wordBubbleService {
-	return &wordBubbleService{source, logger}
+func NewWordBubblesService(log util.Logger, repo WordBubbleRepo) *wordBubbleService {
+	return &wordBubbleService{
+		repo: repo,
+		log:  log,
+	}
 }
 
 func (svc *wordBubbleService) AddNewWordBubble(userId int64, wb *model.WordBubble) error {
-	return svc.source.AddNewWordBubble(userId, wb)
+	return svc.repo.AddNewWordBubble(userId, wb)
 }
 
 func (svc *wordBubbleService) UserHasAvailability(userId int64) error {
 	svc.log.Info("processing")
-	amt, err := svc.source.NumberOfWordBubblesForUser(userId)
+	amt, err := svc.repo.NumberOfWordBubblesForUser(userId)
 	if err != nil {
 		return err
 	}
@@ -56,5 +59,5 @@ func (svc *wordBubbleService) ValidWordBubble(wb *model.WordBubble) error {
 }
 
 func (wbs *wordBubbleService) RemoveAndReturnLatestWordBubbleForUserId(userId int64) *model.WordBubble {
-	return wbs.source.RemoveAndReturnLatestWordBubbleForUserId(userId)
+	return wbs.repo.RemoveAndReturnLatestWordBubbleForUserId(userId)
 }

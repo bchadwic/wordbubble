@@ -25,15 +25,17 @@ var port = func() string {
 
 func main() {
 	logger := newLogger("main")
+	timer := util.NewTime()
 	wbRepo := wb.NewWordBubbleRepo(newLogger("wb_repo"))
 	usersRepo := user.NewUserRepo(newLogger("users_repo"))
 	authRepo := auth.NewAuthRepo(newLogger("auth_repo"))
 
 	app := app.NewApp(
-		auth.NewAuthService(authRepo, newLogger("auth"), os.Getenv("WB_SIGNING_KEY")),
-		user.NewUserService(usersRepo, newLogger("users")),
-		wb.NewWordBubblesService(wbRepo, newLogger("wordbubbles")),
+		auth.NewAuthService(newLogger("auth"), authRepo, timer, os.Getenv("WB_SIGNING_KEY")),
+		user.NewUserService(newLogger("users"), usersRepo),
+		wb.NewWordBubblesService(newLogger("wordbubbles"), wbRepo),
 		newLogger("app"),
+		timer,
 	)
 
 	http.HandleFunc("/signup", app.Signup)

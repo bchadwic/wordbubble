@@ -18,12 +18,15 @@ type UserService interface {
 }
 
 type userService struct {
-	repo   UserRepo
-	logger util.Logger
+	repo UserRepo
+	log  util.Logger
 }
 
-func NewUserService(source UserRepo, logger util.Logger) *userService {
-	return &userService{source, logger}
+func NewUserService(logger util.Logger, repo UserRepo) *userService {
+	return &userService{
+		repo: repo,
+		log:  logger,
+	}
 }
 
 func (svc *userService) AddUser(user *model.User) error {
@@ -38,13 +41,13 @@ func (svc *userService) AddUser(user *model.User) error {
 	var passwordBytes = []byte(user.Password)
 	hashedPasswordBytes, err := bcrypt.GenerateFromPassword(passwordBytes, bcrypt.DefaultCost)
 	if err != nil {
-		svc.logger.Error("bcrypt error, could not add user %s", err)
+		svc.log.Error("bcrypt error, could not add user %s", err)
 		return err // bcrypt err'd out, can't continue
 	}
 	user.Password = string(hashedPasswordBytes)
 	id, err := svc.repo.AddUser(user)
 	if err != nil {
-		svc.logger.Error("could not add user %s", err)
+		svc.log.Error("could not add user %s", err)
 		return err
 	}
 	user.Id = id
@@ -62,11 +65,11 @@ func (svc *userService) RetrieveUserByString(userStr string) *model.User {
 func (svc *userService) RetrieveAuthenticatedUserByString(userStr, password string) *model.User {
 	user := svc.repo.RetrieveUserByString(userStr)
 	if user == nil {
-		svc.logger.Error("couldn't retrieve user by string, user: %s", userStr)
+		svc.log.Error("couldn't retrieve user by string, user: %s", userStr)
 		return nil
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
-		svc.logger.Error("password did not match hashed password %s", err)
+		svc.log.Error("password did not match hashed password %s", err)
 		return nil // db password and the password passed did not match
 	}
 	return user // successfully authenticated
