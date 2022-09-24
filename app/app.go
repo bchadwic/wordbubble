@@ -65,12 +65,6 @@ func (app *App) Signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	accessToken, err := app.auth.GenerateAccessToken(user.Id)
-	if err != nil {
-		app.respond(err.Error(), http.StatusInternalServerError, w)
-		return
-	}
-
 	refreshToken, err := app.auth.GenerateRefreshToken(user.Id)
 	if err != nil {
 		app.respond(err.Error(), http.StatusInternalServerError, w)
@@ -80,7 +74,7 @@ func (app *App) Signup(w http.ResponseWriter, r *http.Request) {
 	resp := struct {
 		RefreshToken string `json:"refresh_token"`
 		AccessToken  string `json:"access_token"`
-	}{refreshToken, accessToken}
+	}{refreshToken, app.auth.GenerateAccessToken(user.Id)}
 	app.log.Info("generated token was successful, sending back token response")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(resp)
@@ -109,12 +103,6 @@ func (app *App) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	accessToken, err := app.auth.GenerateAccessToken(AuthenticateUser.Id)
-	if err != nil {
-		app.respond(err.Error(), http.StatusInternalServerError, w)
-		return
-	}
-
 	refreshToken, err := app.auth.GenerateRefreshToken(AuthenticateUser.Id)
 	if err != nil {
 		app.respond(err.Error(), http.StatusInternalServerError, w)
@@ -124,7 +112,7 @@ func (app *App) Login(w http.ResponseWriter, r *http.Request) {
 	resp := struct {
 		RefreshToken string `json:"refresh_token"`
 		AccessToken  string `json:"access_token"`
-	}{refreshToken, accessToken}
+	}{refreshToken, app.auth.GenerateAccessToken(AuthenticateUser.Id)}
 	app.log.Info("generated token was successful, sending back token response")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(resp)
@@ -146,7 +134,7 @@ func (app *App) Token(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userId, err := app.auth.GetUserIdFromTokenString(reqBody.RefreshToken)
+	userId, err := util.GetUserIdFromTokenString(reqBody.RefreshToken)
 	if err != nil {
 		app.respond(err.Error(), http.StatusUnauthorized, w)
 		return
@@ -163,16 +151,10 @@ func (app *App) Token(w http.ResponseWriter, r *http.Request) {
 		latestRefreshToken = app.auth.GetOrCreateLatestRefreshToken(userId)
 	}
 
-	accessToken, err := app.auth.GenerateAccessToken(userId)
-	if err != nil {
-		app.respond(err.Error(), http.StatusInternalServerError, w)
-		return
-	}
-
 	resp := struct {
 		RefreshToken string `json:"refresh_token,omitempty"`
 		AccessToken  string `json:"access_token"`
-	}{latestRefreshToken, accessToken}
+	}{latestRefreshToken, app.auth.GenerateAccessToken(userId)}
 	app.log.Info("generated token was successful, sending back token response")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(resp)

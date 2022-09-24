@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/bchadwic/wordbubble/util"
-	"github.com/golang-jwt/jwt"
 )
 
 const (
@@ -18,9 +17,10 @@ const (
 var cleanupExpiredRefreshTokensStatement = `DELETE FROM tokens WHERE issued_at < ?`
 
 type AuthService interface {
-	GenerateAccessToken(userId int64) (string, error)
+	GenerateAccessToken(userId int64) string
+	// Generates a refresh token, it is possible to get a refresh token back with an error.
+	// An error is generated when the token couldn't be successfully saved to the database
 	GenerateRefreshToken(userId int64) (string, error)
-	GetUserIdFromTokenString(tokenStr string) (int64, error)
 	VerifyTokenAgainstAuthSource(userId int64, tokenStr string) (int64, error)
 	GetOrCreateLatestRefreshToken(userId int64) string
 }
@@ -30,11 +30,6 @@ type authService struct {
 	log        util.Logger
 	timer      util.Timer
 	signingKey string
-}
-
-type tokenClaims struct {
-	jwt.StandardClaims
-	UserId int64 `json:"user_id"`
 }
 
 type refreshToken struct {
@@ -52,66 +47,19 @@ func NewAuthService(log util.Logger, repo AuthRepo, timer util.Timer, signingKey
 	}
 }
 
-// TODO combine GenerateAccessToken and GenerateRefreshToken?
-func (svc *authService) GenerateAccessToken(userId int64) (string, error) {
+func (svc *authService) GenerateAccessToken(userId int64) string {
 	now := svc.timer.Now()
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &tokenClaims{
-		jwt.StandardClaims{
-			IssuedAt:  now.Unix(),
-			ExpiresAt: now.Add(accessTokenTimeLimit).Unix(),
-		},
-		userId,
-	})
-	signedToken, err := token.SignedString([]byte(svc.signingKey))
-	if err != nil {
-		svc.log.Error("failed to create access token for user: %d, error: %s", userId, err)
-		return "", errors.New("failed to sign and generate an access token")
-	}
-	return signedToken, nil
+	return util.GenerateSignedToken(now.Unix(), now.Add(accessTokenTimeLimit).Unix(), userId)
 }
 
 func (svc *authService) GenerateRefreshToken(userId int64) (string, error) {
 	now := svc.timer.Now()
-	signedToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, &tokenClaims{
-		jwt.StandardClaims{
-			ExpiresAt: now.Add(refreshTokenTimeLimit * time.Second).Unix(),
-			IssuedAt:  now.Unix(),
-		},
-		userId,
-	}).SignedString([]byte(svc.signingKey))
-	if err != nil {
-		svc.log.Error("failed to create access token for user: %d, error: %s", userId, err)
-		return "", errors.New("failed to sign and generate a refresh token")
-	}
 	token := &refreshToken{
-		string:   signedToken,
+		string:   util.GenerateSignedToken(now.Unix(), now.Add(refreshTokenTimeLimit*time.Second).Unix(), userId),
 		userId:   userId,
 		issuedAt: now.Unix(),
 	}
-	if err := svc.repo.StoreRefreshToken(token); err != nil {
-		return "", err
-	}
-	return signedToken, nil
-}
-
-func (svc *authService) GetUserIdFromTokenString(tokenStr string) (int64, error) {
-	tokenClaims := &tokenClaims{} // TODO come back to this mapping
-	token, err := jwt.ParseWithClaims(tokenStr, tokenClaims, func(t *jwt.Token) (interface{}, error) {
-		return []byte(svc.signingKey), nil
-	})
-	if err != nil {
-		if err == jwt.ErrSignatureInvalid {
-			svc.log.Error("signature is invalid, error: %s", err)
-			return 0, errors.New("token signature was found to be invalid")
-		}
-		svc.log.Error("an error occurred while parsing token, defaulting to expiration: error %s", err)
-		return 0, errors.New("access token is expired")
-	}
-	if !token.Valid { // only applicable to access tokens
-		svc.log.Error("token is expired for user: %d, error: %s", tokenClaims.UserId, err)
-		return 0, errors.New("access token is expired")
-	}
-	return tokenClaims.UserId, nil
+	return token.string, svc.repo.StoreRefreshToken(token)
 }
 
 func (svc *authService) VerifyTokenAgainstAuthSource(userId int64, tokenStr string) (int64, error) {

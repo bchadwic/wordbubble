@@ -14,6 +14,10 @@ type AuthRepo interface {
 	GetLatestRefreshToken(userId int64) *refreshToken
 }
 
+const (
+	h = 5
+)
+
 type authRepo struct {
 	db  *sql.DB
 	log util.Logger
