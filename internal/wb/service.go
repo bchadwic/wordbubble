@@ -24,6 +24,6 @@ func (svc *wordBubbleService) AddNewWordBubble(userId int64, wb *model.WordBubbl
 	return svc.repo.AddNewWordBubble(userId, wb)
 }
 
-func (wbs *wordBubbleService) RemoveAndReturnLatestWordBubbleForUserId(userId int64) *model.WordBubble {
-	return wbs.repo.RemoveAndReturnLatestWordBubbleForUserId(userId)
+func (svc *wordBubbleService) RemoveAndReturnLatestWordBubbleForUserId(userId int64) *model.WordBubble {
+	return svc.repo.RemoveAndReturnLatestWordBubbleForUserId(userId)
 }

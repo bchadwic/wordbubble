@@ -2,7 +2,6 @@ package wb
 
 import (
 	"database/sql"
-	"errors"
 
 	"github.com/bchadwic/wordbubble/model"
 	"github.com/bchadwic/wordbubble/resp"
@@ -37,12 +36,8 @@ func (repo *wordBubbleRepo) AddNewWordBubble(userId int64, wb *model.WordBubble)
 		repo.log.Error("execute error for adding a wordbubble %+v for user: %d, error: %s", wb, userId, err)
 		return err
 	}
-	amt, err := rs.RowsAffected()
-	if err != nil {
-		repo.log.Error("rows affected explosion %+v for user: %d, error: %s", wb, userId, err)
-		return errors.New("couldn't determine how many wordbubbles you currently have")
-	}
-	if amt == 0 {
+	amt, _ := rs.RowsAffected()
+	if amt <= 0 {
 		return resp.ErrMaxAmountOfWordBubblesReached
 	}
 	return nil
