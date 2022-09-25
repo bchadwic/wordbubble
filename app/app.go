@@ -39,7 +39,7 @@ func (wb *app) BackgroundCleaner(authCleaner auth.AuthCleaner) {
 }
 
 func (wb *app) errorResponse(err error, w http.ResponseWriter) {
-	wb.log.Error("an error occurred %w", err)
+	wb.log.Error("an error occurred %s", err.Error())
 	switch t := err.(type) {
 	case *resp.ErrorResponse:
 		w.WriteHeader(t.Code)
