@@ -31,7 +31,7 @@ func main() {
 	}
 	logger := newLogger("main")
 	timer := util.NewTimer()
-	wbRepo := wb.NewWordBubbleRepo(newLogger("wb_repo"))
+	wbRepo := wb.NewWordBubbleRepo(newLogger("wb_repo"), db)
 	usersRepo := user.NewUserRepo(newLogger("users_repo"))
 	authRepo := auth.NewAuthRepo(newLogger("auth_repo"), db)
 

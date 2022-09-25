@@ -2,6 +2,7 @@ package util
 
 import (
 	"errors"
+	"fmt"
 	"net/mail"
 	"unicode"
 
@@ -9,9 +10,11 @@ import (
 )
 
 const (
-	minPasswordLength = 6
-	maxUsernameLength = 40
-	maxEmailLength    = 320
+	minPasswordLength   = 6
+	maxUsernameLength   = 40
+	maxEmailLength      = 320
+	minWordBubbleLength = 1
+	maxWordBubbleLength = 255
 )
 
 // validate all the fields of a user
@@ -109,4 +112,12 @@ func ValidPassword(password string) error {
 		return errors.New(errStr + last)
 	}
 	return errors.New(errStr + "and " + last)
+}
+
+func ValidWordBubble(wb *model.WordBubble) error {
+	len := len(wb.Text)
+	if len < minWordBubbleLength || len > maxWordBubbleLength {
+		return fmt.Errorf("wordbubble sent is invalid, must be inbetween %d-%d characters, received a length of %d", minWordBubbleLength, maxWordBubbleLength, len)
+	}
+	return nil
 }
