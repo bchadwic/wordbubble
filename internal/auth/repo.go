@@ -8,15 +8,6 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-type AuthRepo interface {
-	StoreRefreshToken(token *refreshToken) error
-	ValidateRefreshToken(token *refreshToken) (int64, error)
-	GetLatestRefreshToken(userId int64) *refreshToken
-}
-
-const (
-	h = 5
-)
 
 type authRepo struct {
 	db  *sql.DB
@@ -45,10 +36,10 @@ func NewAuthRepo(logger util.Logger) *authRepo {
 func (repo *authRepo) StoreRefreshToken(token *refreshToken) error {
 	stmt, err := repo.db.Prepare(`INSERT INTO tokens (user_id, refresh_token, issued_at) VALUES (?, ?, ?)`)
 	if err != nil {
-		repo.log.Error("could not store token for user: %d, error: %s", token.userId, err)
+		repo.log.Error("could not store token for user: %d, error: %s", token.UserId(), err)
 		return errors.New("could not successfully prepare refresh token for storage on server")
 	}
-	_, err = stmt.Exec(token.userId, token.string, token.issuedAt)
+	_, err = stmt.Exec(token.UserId(), token.string, token.issuedAt)
 	if err != nil {
 		repo.log.Error("could not execute statement for user: %d, error: %s", err)
 		return errors.New("could not successfully store refresh token on server")
@@ -56,28 +47,29 @@ func (repo *authRepo) StoreRefreshToken(token *refreshToken) error {
 	return nil
 }
 
-func (repo *authRepo) ValidateRefreshToken(token *refreshToken) (int64, error) {
+func (repo *authRepo) ValidateRefreshToken(token *refreshToken) error {
 	stmt, err := repo.db.Prepare(`SELECT issued_at FROM tokens WHERE user_id = ? AND refresh_token = ?`)
 	if err != nil {
-		repo.log.Error("could not validate token for user: %d:, error: %s", token.userId, err)
-		return 0, errors.New("could not prepare token for validation against server")
+		repo.log.Error("could not validate token for user: %d:, error: %s", token.UserId(), err)
+		return errors.New("could not prepare token for validation against server")
 	}
-	row, err := stmt.Query(token.userId, token.string)
+	row, err := stmt.Query(token.UserId(), token.string)
 	if err != nil {
-		repo.log.Error("could not query for refresh token for user: %d, error: %s", token.userId, err)
-		return 0, errors.New("could not retrieve server refresh tokens for user")
+		repo.log.Error("could not query for refresh token for user: %d, error: %s", token.UserId(), err)
+		return errors.New("could not retrieve server refresh tokens for user")
 	}
 	defer row.Close()
 	if !row.Next() {
-		repo.log.Error("no tokens matched what was passed in for user: %d", token.userId)
-		return 0, errors.New("could not validate refresh token, please login again")
+		repo.log.Error("no tokens matched what was passed in for user: %d", token.UserId())
+		return errors.New("could not validate refresh token, please login again")
 	}
 	var issuedAt int64
 	if err := row.Scan(&issuedAt); err != nil {
-		repo.log.Error("could not map rows for user: %d, error: %s", token.userId, err)
-		return 0, errors.New("could not validate issued time of refresh token, please login again")
+		repo.log.Error("could not map rows for user: %d, error: %s", token.UserId(), err)
+		return errors.New("could not validate issued time of refresh token, please login again")
 	}
-	return issuedAt, nil
+	token.issuedAt = issuedAt
+	return nil
 }
 
 func (repo *authRepo) GetLatestRefreshToken(userId int64) *refreshToken {
@@ -102,7 +94,8 @@ func (repo *authRepo) GetLatestRefreshToken(userId int64) *refreshToken {
 		repo.log.Error("could not map the latest refresh token for user: %d, error: %s", userId, err)
 		return nil
 	}
-	return &refreshToken{val, issuedAt, userId}
+	return &refreshToken{
+		string: val, issuedAt: issuedAt, userId: userId}
 }
 
 type AuthCleaner interface {

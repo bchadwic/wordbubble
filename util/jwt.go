@@ -17,14 +17,14 @@ func GenerateSignedToken(iat, exp, userId int64) string {
 }
 
 func GetUserIdFromTokenString(tokenStr string) (int64, error) {
-	if tokenClaims, err := parseWithClaims(tokenStr); err != nil {
+	if tokenClaims, err := ParseWithClaims(tokenStr); err != nil {
 		return 0, errors.New("token signature was found to be invalid")
 	} else {
 		return tokenClaims.UserId, nil
 	}
 }
 
-func parseWithClaims(tokenStr string) (*model.TokenClaims, error) {
+func ParseWithClaims(tokenStr string) (*model.TokenClaims, error) {
 	tokenClaims := &model.TokenClaims{} // TODO come back to this mapping
 	_, err := jwt.ParseWithClaims(tokenStr, tokenClaims, func(t *jwt.Token) (interface{}, error) {
 		return SigningKey(), nil

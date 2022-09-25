@@ -27,7 +27,7 @@ func main() {
 	logger := newLogger("main")
 	timer := util.NewTime()
 	util.SigningKey = func() []byte {
-	return []byte(os.Getenv("WB_SIGNING_KEY"))
+		return []byte(os.Getenv("WB_SIGNING_KEY"))
 	}
 	wbRepo := wb.NewWordBubbleRepo(newLogger("wb_repo"))
 	usersRepo := user.NewUserRepo(newLogger("users_repo"))

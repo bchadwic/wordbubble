@@ -1,6 +1,8 @@
 package util
 
-import t "time"
+import (
+	t "time"
+)
 
 type timer struct{}
 

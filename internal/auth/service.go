@@ -7,35 +7,11 @@ import (
 	"github.com/bchadwic/wordbubble/util"
 )
 
-const (
-	refreshTokenTimeLimit    = 60
-	accessTokenTimeLimit     = 10 * time.Second // change me to something quicker
-	RefreshTokenCleanerRate  = 30 * time.Second
-	ImminentExpirationWindow = int64(float64(refreshTokenTimeLimit) * .2)
-)
-
-var cleanupExpiredRefreshTokensStatement = `DELETE FROM tokens WHERE issued_at < ?`
-
-type AuthService interface {
-	GenerateAccessToken(userId int64) string
-	// Generates a refresh token, it is possible to get a refresh token back with an error.
-	// An error is generated when the token couldn't be successfully saved to the database
-	GenerateRefreshToken(userId int64) (string, error)
-	VerifyTokenAgainstAuthSource(userId int64, tokenStr string) (int64, error)
-	GetOrCreateLatestRefreshToken(userId int64) string
-}
-
 type authService struct {
 	repo       AuthRepo
 	log        util.Logger
 	timer      util.Timer
 	signingKey string
-}
-
-type refreshToken struct {
-	string
-	issuedAt int64
-	userId   int64
 }
 
 func NewAuthService(log util.Logger, repo AuthRepo, timer util.Timer, signingKey string) *authService {
@@ -54,38 +30,32 @@ func (svc *authService) GenerateAccessToken(userId int64) string {
 
 func (svc *authService) GenerateRefreshToken(userId int64) (string, error) {
 	now := svc.timer.Now()
-	token := &refreshToken{
-		string:   util.GenerateSignedToken(now.Unix(), now.Add(refreshTokenTimeLimit*time.Second).Unix(), userId),
-		userId:   userId,
-		issuedAt: now.Unix(),
+	token, _ := RefreshTokenFromTokenString(
+		util.GenerateSignedToken(now.Unix(), now.Add(refreshTokenTimeLimit*time.Second).Unix(), userId),
+	)
+	if err := svc.repo.StoreRefreshToken(token); err != nil {
+		return "", err
 	}
-	return token.string, svc.repo.StoreRefreshToken(token)
+	return token.string, nil
 }
 
-func (svc *authService) VerifyTokenAgainstAuthSource(userId int64, tokenStr string) (int64, error) {
-	token := &refreshToken{
-		string: tokenStr,
-		userId: userId,
+func (svc *authService) ValidateRefreshToken(token *refreshToken) (err error) {
+	if err = svc.checkRefreshTokenExpiry(token); err != nil {
+		return
 	}
-	issuedAt, err := svc.repo.ValidateRefreshToken(token)
-	if err != nil {
-		return 0, err
+	if err = svc.repo.ValidateRefreshToken(token); err != nil {
+		return
 	}
-	timeDiff := svc.timer.Now().Unix() - issuedAt
-	if timeDiff >= refreshTokenTimeLimit {
-		svc.log.Error("token was found to be expired for user: %d", userId)
-		return 0, errors.New("refresh token is expired, please login again")
-	}
-	return refreshTokenTimeLimit - timeDiff, nil
+	return
 }
 
-func (svc *authService) GetOrCreateLatestRefreshToken(userId int64) string {
-	token := svc.repo.GetLatestRefreshToken(userId)
-	if token != nil { // if there is a token that isn't close to dying, use that
-		if timeRemaining := svc.timer.Now().Unix() - token.issuedAt; timeRemaining > ImminentExpirationWindow {
-			return token.string
+// sets EOL flag for token; returns error if token is expired
+func (svc *authService) checkRefreshTokenExpiry(token *refreshToken) error {
+	if timeLeft := refreshTokenTimeLimit - (svc.timer.Now().Unix() - token.issuedAt); timeLeft < ImminentExpirationWindow {
+		token.nearEOL = true
+		if timeLeft <= 0 {
+			return errors.New("refresh token is expired, please login again")
 		}
-	} // otherwise create a new one
-	newRefreshToken, _ := svc.GenerateRefreshToken(userId)
-	return newRefreshToken
+	}
+	return nil
 }
