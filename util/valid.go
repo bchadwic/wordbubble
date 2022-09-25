@@ -13,8 +13,8 @@ const (
 	minPasswordLength   = 6
 	maxUsernameLength   = 40
 	maxEmailLength      = 320
-	minWordBubbleLength = 1
-	maxWordBubbleLength = 255
+	MinWordBubbleLength = 1
+	MaxWordBubbleLength = 255
 )
 
 // validate all the fields of a user
@@ -116,8 +116,8 @@ func ValidPassword(password string) error {
 
 func ValidWordBubble(wb *model.WordBubble) error {
 	len := len(wb.Text)
-	if len < minWordBubbleLength || len > maxWordBubbleLength {
-		return fmt.Errorf("wordbubble sent is invalid, must be inbetween %d-%d characters, received a length of %d", minWordBubbleLength, maxWordBubbleLength, len)
+	if len < MinWordBubbleLength || len > MaxWordBubbleLength {
+		return fmt.Errorf("wordbubble sent is invalid, must be inbetween %d-%d characters, received a length of %d", MinWordBubbleLength, MaxWordBubbleLength, len)
 	}
 	return nil
 }
