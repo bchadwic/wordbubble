@@ -7,19 +7,6 @@ import (
 	"github.com/bchadwic/wordbubble/util"
 )
 
-const (
-	minWordBubbleLength    = 1
-	maxWordBubbleLength    = 255
-	maxAmountOfWordBubbles = 10
-)
-
-type WordBubbleService interface {
-	AddNewWordBubble(userId int64, wb *model.WordBubble) error
-	ValidWordBubble(wb *model.WordBubble) error
-	UserHasAvailability(userId int64) error
-	RemoveAndReturnLatestWordBubbleForUserId(userId int64) *model.WordBubble
-}
-
 type wordBubbleService struct {
 	repo WordBubbleRepo
 	log  util.Logger
