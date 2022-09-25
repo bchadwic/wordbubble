@@ -8,9 +8,9 @@ import (
 	"github.com/bchadwic/wordbubble/resp"
 )
 
-func (app *App) Token(w http.ResponseWriter, r *http.Request) {
+func (wb *app) Token(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		app.errorResponse(resp.ErrInvalidMethod, w)
+		wb.errorResponse(resp.ErrInvalidMethod, w)
 		return
 	}
 
@@ -18,29 +18,29 @@ func (app *App) Token(w http.ResponseWriter, r *http.Request) {
 		TokenString string `json:"refresh_token"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
-		app.errorResponse(resp.ErrInvalidMethod, w)
+		wb.errorResponse(resp.ErrInvalidMethod, w)
 		return
 	}
 
 	token, err := auth.RefreshTokenFromTokenString(reqBody.TokenString)
 	if err != nil {
-		app.errorResponse(err, w)
+		wb.errorResponse(err, w)
 		return
 	}
-	if err = app.auth.ValidateRefreshToken(token); err != nil {
-		app.errorResponse(err, w)
+	if err = wb.auth.ValidateRefreshToken(token); err != nil {
+		wb.errorResponse(err, w)
 		return
 	}
 
 	var latestRefreshToken string
 	if token.IsNearEndOfLife() {
-		latestRefreshToken, _ = app.auth.GenerateRefreshToken(token.UserId())
+		latestRefreshToken, _ = wb.auth.GenerateRefreshToken(token.UserId())
 	}
 
 	resp := struct {
 		RefreshToken string `json:"refresh_token,omitempty"`
 		AccessToken  string `json:"access_token"`
-	}{latestRefreshToken, app.auth.GenerateAccessToken(token.UserId())}
+	}{latestRefreshToken, wb.auth.GenerateAccessToken(token.UserId())}
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(resp)
 }

@@ -10,7 +10,7 @@ import (
 	"github.com/bchadwic/wordbubble/util"
 )
 
-type App struct {
+type app struct {
 	auth        auth.AuthService
 	users       user.UserService
 	wordbubbles wb.WordBubbleService
@@ -18,8 +18,8 @@ type App struct {
 	timer       util.Timer
 }
 
-func NewApp(authService auth.AuthService, userService user.UserService, wbService wb.WordBubbleService, log util.Logger, timer util.Timer) *App {
-	return &App{
+func NewApp(authService auth.AuthService, userService user.UserService, wbService wb.WordBubbleService, log util.Logger, timer util.Timer) *app {
+	return &app{
 		auth:        authService,
 		users:       userService,
 		wordbubbles: wbService,
@@ -28,17 +28,18 @@ func NewApp(authService auth.AuthService, userService user.UserService, wbServic
 	}
 }
 
-func (app *App) BackgroundCleaner(authCleaner auth.AuthCleaner) {
+// TODO make this better
+func (wb *app) BackgroundCleaner(authCleaner auth.AuthCleaner) {
 	const refreshTokenTimeLimit = 60
 	go func() {
-		for range app.timer.Tick(auth.RefreshTokenCleanerRate) {
-			_ = authCleaner.CleanupExpiredRefreshTokens(app.timer.Now().Unix() - refreshTokenTimeLimit)
+		for range wb.timer.Tick(auth.RefreshTokenCleanerRate) {
+			_ = authCleaner.CleanupExpiredRefreshTokens(wb.timer.Now().Unix() - refreshTokenTimeLimit)
 		}
 	}()
 }
 
-func (app *App) errorResponse(err error, w http.ResponseWriter) {
-	app.log.Error("app - an error occurred %w", err)
+func (wb *app) errorResponse(err error, w http.ResponseWriter) {
+	wb.log.Error("an error occurred %w", err)
 	switch t := err.(type) {
 	case *resp.ErrorResponse:
 		w.WriteHeader(t.Code)

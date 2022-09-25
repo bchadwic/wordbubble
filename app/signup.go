@@ -9,38 +9,38 @@ import (
 	"github.com/bchadwic/wordbubble/util"
 )
 
-func (app *App) Signup(w http.ResponseWriter, r *http.Request) {
+func (wb *app) Signup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		app.errorResponse(resp.ErrInvalidMethod, w)
+		wb.errorResponse(resp.ErrInvalidMethod, w)
 		return
 	}
 
 	var user model.User
 	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
-		app.errorResponse(resp.ErrParseUser, w)
+		wb.errorResponse(resp.ErrParseUser, w)
 		return
 	}
 
 	if err := util.ValidUser(&user); err != nil {
-		app.errorResponse(err, w)
+		wb.errorResponse(err, w)
 		return
 	}
 
-	if err := app.users.AddUser(&user); err != nil {
-		app.errorResponse(err, w)
+	if err := wb.users.AddUser(&user); err != nil {
+		wb.errorResponse(err, w)
 		return
 	}
 
-	refreshToken, err := app.auth.GenerateRefreshToken(user.Id)
+	refreshToken, err := wb.auth.GenerateRefreshToken(user.Id)
 	if err != nil {
-		app.errorResponse(err, w)
+		wb.errorResponse(err, w)
 		return
 	}
 
 	resp := struct {
 		RefreshToken string `json:"refresh_token"`
 		AccessToken  string `json:"access_token"`
-	}{refreshToken, app.auth.GenerateAccessToken(user.Id)}
+	}{refreshToken, wb.auth.GenerateAccessToken(user.Id)}
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(resp)
 }

@@ -7,9 +7,9 @@ import (
 	"github.com/bchadwic/wordbubble/resp"
 )
 
-func (app *App) Pop(w http.ResponseWriter, r *http.Request) {
+func (wb *app) Pop(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
-		app.errorResponse(resp.ErrInvalidMethod, w)
+		wb.errorResponse(resp.ErrInvalidMethod, w)
 		return
 	}
 
@@ -17,19 +17,19 @@ func (app *App) Pop(w http.ResponseWriter, r *http.Request) {
 		UserStr string `json:"user"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
-		app.errorResponse(resp.ErrParseUser, w)
+		wb.errorResponse(resp.ErrParseUser, w)
 		return
 	}
 
-	user := app.users.RetrieveUserByString(reqBody.UserStr)
+	user := wb.users.RetrieveUserByString(reqBody.UserStr)
 	if user == nil {
-		app.errorResponse(resp.ErrUnknownUser, w)
+		wb.errorResponse(resp.ErrUnknownUser, w)
 		return
 	}
 
-	wordbubble := app.wordbubbles.RemoveAndReturnLatestWordBubbleForUserId(user.Id)
+	wordbubble := wb.wordbubbles.RemoveAndReturnLatestWordBubbleForUserId(user.Id)
 	if wordbubble == nil {
-		app.errorResponse(resp.ErrNoWordBubble, w)
+		wb.errorResponse(resp.ErrNoWordBubble, w)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
