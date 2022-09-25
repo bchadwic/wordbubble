@@ -45,8 +45,11 @@ func NewLogger(namespace, strLogLevel string) *logger {
 			return WARN
 		}
 	}
-
 	return &logger{log.Default(), namespace, levelAssigner(strLogLevel)}
+}
+
+func TestLogger() *logger {
+	return &logger{log.Default(), "", NONE}
 }
 
 func (l *logger) Error(s string, a ...any) {

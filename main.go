@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"errors"
 	"net/http"
 	"os"
@@ -24,11 +25,15 @@ var port = func() string {
 }()
 
 func main() {
+	db, err := sql.Open("sqlite3", "./wordbubble.db")
+	if err != nil {
+		panic(err)
+	}
 	logger := newLogger("main")
-	timer := util.NewTime()
+	timer := util.NewTimer()
 	wbRepo := wb.NewWordBubbleRepo(newLogger("wb_repo"))
 	usersRepo := user.NewUserRepo(newLogger("users_repo"))
-	authRepo := auth.NewAuthRepo(newLogger("auth_repo"))
+	authRepo := auth.NewAuthRepo(newLogger("auth_repo"), db)
 
 	app := app.NewApp(
 		auth.NewAuthService(newLogger("auth"), authRepo, timer, os.Getenv("WB_SIGNING_KEY")),
@@ -45,10 +50,10 @@ func main() {
 	http.HandleFunc("/pop", app.Pop)
 
 	logger.Info("starting refresh token cleaner with an interval of: %gs", auth.RefreshTokenCleanerRate.Seconds())
-	app.BackgroundCleaner(authRepo) // TODO make a timer interface to pass in
+	app.BackgroundCleaner(authRepo)
 
 	logger.Info("starting server on port %s", port)
-	err := http.ListenAndServe(port, nil)
+	err = http.ListenAndServe(port, nil)
 	if errors.Is(err, http.ErrServerClosed) {
 		logger.Info("server closed")
 	} else if err != nil {

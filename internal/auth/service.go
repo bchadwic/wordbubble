@@ -5,25 +5,7 @@ import (
 	"time"
 
 	"github.com/bchadwic/wordbubble/util"
-	"github.com/golang-jwt/jwt"
 )
-
-const (
-	refreshTokenTimeLimit    = 60
-	accessTokenTimeLimit     = 10 * time.Second // change me to something quicker
-	RefreshTokenCleanerRate  = 30 * time.Second
-	ImminentExpirationWindow = int64(float64(refreshTokenTimeLimit) * .2)
-)
-
-var cleanupExpiredRefreshTokensStatement = `DELETE FROM tokens WHERE issued_at < ?`
-
-type AuthService interface {
-	GenerateAccessToken(userId int64) (string, error)
-	GenerateRefreshToken(userId int64) (string, error)
-	GetUserIdFromTokenString(tokenStr string) (int64, error)
-	VerifyTokenAgainstAuthSource(userId int64, tokenStr string) (int64, error)
-	GetOrCreateLatestRefreshToken(userId int64) string
-}
 
 type authService struct {
 	repo       AuthRepo
@@ -32,18 +14,17 @@ type authService struct {
 	signingKey string
 }
 
-type tokenClaims struct {
-	jwt.StandardClaims
-	UserId int64 `json:"user_id"`
-}
-
 type refreshToken struct {
 	string
 	issuedAt int64
 	userId   int64
+	nearEOL  bool
 }
 
 func NewAuthService(log util.Logger, repo AuthRepo, timer util.Timer, signingKey string) *authService {
+	util.SigningKey = func() []byte {
+		return []byte(signingKey)
+	}
 	return &authService{
 		log:        log,
 		repo:       repo,
@@ -52,92 +33,61 @@ func NewAuthService(log util.Logger, repo AuthRepo, timer util.Timer, signingKey
 	}
 }
 
-// TODO combine GenerateAccessToken and GenerateRefreshToken?
-func (svc *authService) GenerateAccessToken(userId int64) (string, error) {
+func (svc *authService) GenerateAccessToken(userId int64) string {
 	now := svc.timer.Now()
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &tokenClaims{
-		jwt.StandardClaims{
-			IssuedAt:  now.Unix(),
-			ExpiresAt: now.Add(accessTokenTimeLimit).Unix(),
-		},
-		userId,
-	})
-	signedToken, err := token.SignedString([]byte(svc.signingKey))
-	if err != nil {
-		svc.log.Error("failed to create access token for user: %d, error: %s", userId, err)
-		return "", errors.New("failed to sign and generate an access token")
-	}
-	return signedToken, nil
+	return util.GenerateSignedToken(now.Unix(), now.Add(accessTokenTimeLimit).Unix(), userId)
 }
 
 func (svc *authService) GenerateRefreshToken(userId int64) (string, error) {
 	now := svc.timer.Now()
-	signedToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, &tokenClaims{
-		jwt.StandardClaims{
-			ExpiresAt: now.Add(refreshTokenTimeLimit * time.Second).Unix(),
-			IssuedAt:  now.Unix(),
-		},
-		userId,
-	}).SignedString([]byte(svc.signingKey))
-	if err != nil {
-		svc.log.Error("failed to create access token for user: %d, error: %s", userId, err)
-		return "", errors.New("failed to sign and generate a refresh token")
-	}
-	token := &refreshToken{
-		string:   signedToken,
-		userId:   userId,
-		issuedAt: now.Unix(),
-	}
+	token, _ := RefreshTokenFromTokenString(
+		util.GenerateSignedToken(now.Unix(), now.Add(refreshTokenTimeLimit*time.Second).Unix(), userId),
+	)
 	if err := svc.repo.StoreRefreshToken(token); err != nil {
 		return "", err
 	}
-	return signedToken, nil
+	return token.string, nil
 }
 
-func (svc *authService) GetUserIdFromTokenString(tokenStr string) (int64, error) {
-	tokenClaims := &tokenClaims{} // TODO come back to this mapping
-	token, err := jwt.ParseWithClaims(tokenStr, tokenClaims, func(t *jwt.Token) (interface{}, error) {
-		return []byte(svc.signingKey), nil
-	})
-	if err != nil {
-		if err == jwt.ErrSignatureInvalid {
-			svc.log.Error("signature is invalid, error: %s", err)
-			return 0, errors.New("token signature was found to be invalid")
+func (svc *authService) ValidateRefreshToken(token *refreshToken) (err error) {
+	if err = svc.checkRefreshTokenExpiry(token); err != nil {
+		return
+	}
+	if err = svc.repo.ValidateRefreshToken(token); err != nil {
+		return
+	}
+	return
+}
+
+// sets EOL flag for token; returns error if token is expired
+func (svc *authService) checkRefreshTokenExpiry(token *refreshToken) error {
+	if timeLeft := refreshTokenTimeLimit - (svc.timer.Now().Unix() - token.issuedAt); timeLeft < ImminentExpirationWindow {
+		token.nearEOL = true
+		if timeLeft <= 0 {
+			return errors.New("refresh token is expired, please login again")
 		}
-		svc.log.Error("an error occurred while parsing token, defaulting to expiration: error %s", err)
-		return 0, errors.New("access token is expired")
 	}
-	if !token.Valid { // only applicable to access tokens
-		svc.log.Error("token is expired for user: %d, error: %s", tokenClaims.UserId, err)
-		return 0, errors.New("access token is expired")
-	}
-	return tokenClaims.UserId, nil
+	return nil
 }
 
-func (svc *authService) VerifyTokenAgainstAuthSource(userId int64, tokenStr string) (int64, error) {
-	token := &refreshToken{
-		string: tokenStr,
-		userId: userId,
-	}
-	issuedAt, err := svc.repo.ValidateRefreshToken(token)
+func RefreshTokenFromTokenString(tokenStr string) (*refreshToken, error) {
+	claims, err := util.ParseWithClaims(tokenStr)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	timeDiff := svc.timer.Now().Unix() - issuedAt
-	if timeDiff >= refreshTokenTimeLimit {
-		svc.log.Error("token was found to be expired for user: %d", userId)
-		return 0, errors.New("refresh token is expired, please login again")
-	}
-	return refreshTokenTimeLimit - timeDiff, nil
+	return &refreshToken{
+		string:   tokenStr,
+		userId:   claims.UserId,
+		issuedAt: claims.IssuedAt,
+	}, nil
 }
 
-func (svc *authService) GetOrCreateLatestRefreshToken(userId int64) string {
-	token := svc.repo.GetLatestRefreshToken(userId)
-	if token != nil { // if there is a token that isn't close to dying, use that
-		if timeRemaining := svc.timer.Now().Unix() - token.issuedAt; timeRemaining > ImminentExpirationWindow {
-			return token.string
-		}
-	} // otherwise create a new one
-	newRefreshToken, _ := svc.GenerateRefreshToken(userId)
-	return newRefreshToken
+// returns true if this token is near the expiration time
+func (tkn *refreshToken) IsNearEndOfLife() bool {
+	return tkn.nearEOL
+}
+
+// returns the user id stored inside the token
+func (tkn *refreshToken) UserId() int64 {
+	return tkn.userId
 }
