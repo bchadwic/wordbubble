@@ -2,14 +2,13 @@ package app
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/bchadwic/wordbubble/internal/auth"
 	"github.com/bchadwic/wordbubble/internal/user"
 	"github.com/bchadwic/wordbubble/internal/wb"
 	"github.com/bchadwic/wordbubble/model"
+	"github.com/bchadwic/wordbubble/resp"
 	"github.com/bchadwic/wordbubble/util"
 )
 
@@ -159,99 +158,6 @@ func (app *App) Token(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(resp)
 }
 
-func (app *App) Push(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		app.log.Error("invalid http method: %s", r.Method)
-		app.respond("invalid http method", http.StatusMethodNotAllowed, w)
-		return
-	}
-
-	authValue := r.Header.Get("authorization")
-	if authValue == "" {
-		app.log.Error("authorization was not passed")
-		app.respond("authorization header is required for pushing a wordbubble", http.StatusUnauthorized, w)
-		return
-	}
-
-	splitToken := strings.Split(authValue, "Bearer ")
-	if len(splitToken) < 2 {
-		app.log.Error("authorization value didn't specifiy token type as bearer")
-		app.respond("a bearer token is required for pushing a wordbubble", http.StatusUnauthorized, w)
-		return
-	}
-
-	tokenStr := splitToken[1] // grab the token from the Bearer string
-	userId, err := util.GetUserIdFromTokenString(tokenStr)
-	if err != nil {
-		app.respond(err.Error(), http.StatusUnauthorized, w)
-		return
-	}
-
-	var wb model.WordBubble // finally we are authenticated! Let's insert a wordbubble
-	if err = json.NewDecoder(r.Body).Decode(&wb); err != nil {
-		app.log.Error("could not decode wordbubble from body: %s", err)
-		app.respond("could not parse a wordbubble from request body", http.StatusBadRequest, w)
-		return
-	}
-
-	if err = app.wordbubbles.ValidWordBubble(&wb); err != nil {
-		app.respond(err.Error(), http.StatusBadRequest, w)
-		return
-	}
-
-	if err = app.wordbubbles.UserHasAvailability(userId); err != nil {
-		app.respond(err.Error(), http.StatusConflict, w)
-		return
-	}
-
-	if err = app.wordbubbles.AddNewWordBubble(userId, &wb); err != nil {
-		app.respond(err.Error(), http.StatusInternalServerError, w)
-		return
-	}
-
-	if wb.Text == "teapot" {
-		app.log.Info("found ourselves a teapot")
-		app.respond("here is some tea for you", http.StatusTeapot, w)
-		return
-	}
-
-	app.log.Info("successfully created a wordbubble for %d", userId)
-	app.respond("thank you!", http.StatusCreated, w)
-}
-
-func (app *App) Pop(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodDelete {
-		app.log.Error("invalid http method: %s", r.Method)
-		app.respond("invalid http method", http.StatusMethodNotAllowed, w)
-		return
-	}
-
-	var reqBody struct {
-		UserStr string `json:"user"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
-		app.log.Error("could not decode identity from body: %s", err)
-		app.respond("could not parse a user from request body", http.StatusBadRequest, w)
-		return
-	}
-
-	user := app.users.RetrieveUserByString(reqBody.UserStr)
-	if user == nil {
-		app.respond(fmt.Sprintf("could not find user %s", reqBody.UserStr), http.StatusBadRequest, w)
-		return
-	}
-
-	wordbubble := app.wordbubbles.RemoveAndReturnLatestWordBubbleForUserId(user.Id)
-	if wordbubble == nil {
-		app.log.Warn("could not find to return for user: %d", user.Id)
-		w.WriteHeader(http.StatusNoContent)
-		return
-	}
-
-	app.log.Info("successfully popped a wordbubble for %d", user.Id)
-	writeResponse(w, http.StatusOK, wordbubble)
-}
-
 func (app *App) respond(response string, statusCode int, w http.ResponseWriter) {
 	w.WriteHeader(statusCode)
 	w.Write([]byte(response)) // temporary, soon to be a struct
@@ -260,4 +166,16 @@ func (app *App) respond(response string, statusCode int, w http.ResponseWriter) 
 func writeResponse(w http.ResponseWriter, statusCode int, resp any) {
 	w.WriteHeader(statusCode)
 	_ = json.NewEncoder(w).Encode(resp)
+}
+
+func (app *App) errorResponse(err error, w http.ResponseWriter) {
+	app.log.Error("app - an error occurred %w", err)
+	switch t := err.(type) {
+	case *resp.ErrorResponse:
+		w.WriteHeader(t.Code)
+		w.Write(t.Message)
+	default:
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write(resp.Unknown)
+	}
 }

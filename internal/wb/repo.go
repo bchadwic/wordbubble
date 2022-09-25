@@ -2,9 +2,10 @@ package wb
 
 import (
 	"database/sql"
-	"fmt"
+	"errors"
 
 	"github.com/bchadwic/wordbubble/model"
+	"github.com/bchadwic/wordbubble/resp"
 	"github.com/bchadwic/wordbubble/util"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -16,6 +17,7 @@ type wordBubbleRepo struct {
 
 func NewWordBubbleRepo(logger util.Logger, db *sql.DB) *wordBubbleRepo {
 	db.Exec(`
+		PRAGMA foreign_keys = ON;
 		CREATE TABLE IF NOT EXISTS wordbubbles (
 			wordbubble_id INTEGER PRIMARY KEY AUTOINCREMENT,
 			user_id INTEGER NOT NULL,  
@@ -27,23 +29,23 @@ func NewWordBubbleRepo(logger util.Logger, db *sql.DB) *wordBubbleRepo {
 	return &wordBubbleRepo{log: logger, db: db}
 }
 
+type OutOfWordBubbleSlots error
+
 func (repo *wordBubbleRepo) AddNewWordBubble(userId int64, wb *model.WordBubble) error {
-	_, err := repo.db.Exec(AddNewWordBubble, userId, wb.Text)
+	rs, err := repo.db.Exec(AddNewWordBubble, userId, wb.Text, userId, maxAmountOfWordBubbles)
 	if err != nil {
 		repo.log.Error("execute error for adding a wordbubble %+v for user: %d, error: %s", wb, userId, err)
 		return err
 	}
-	return nil
-}
-
-func (repo *wordBubbleRepo) NumberOfWordBubblesForUser(userId int64) (int64, error) {
-	row := repo.db.QueryRow(NumberOfWordBubblesForUser, userId)
-	var amt int64
-	if err := row.Scan(&amt); err != nil {
-		repo.log.Error("could not map db wordbubble amount for user: %d, error: %s", userId, err)
-		return 0, fmt.Errorf("an error occurred gathering the current amount of wordbubbles for user")
+	amt, err := rs.RowsAffected()
+	if err != nil {
+		repo.log.Error("rows affected explosion %+v for user: %d, error: %s", wb, userId, err)
+		return errors.New("couldn't determine how many wordbubbles you currently have")
 	}
-	return amt, nil
+	if amt == 0 {
+		return resp.ErrMaxAmountOfWordBubblesReached
+	}
+	return nil
 }
 
 func (repo *wordBubbleRepo) RemoveAndReturnLatestWordBubbleForUserId(userId int64) *model.WordBubble {
