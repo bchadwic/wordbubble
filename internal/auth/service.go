@@ -14,6 +14,13 @@ type authService struct {
 	signingKey string
 }
 
+type refreshToken struct {
+	string
+	issuedAt int64
+	userId   int64
+	nearEOL  bool
+}
+
 func NewAuthService(log util.Logger, repo AuthRepo, timer util.Timer, signingKey string) *authService {
 	util.SigningKey = func() []byte {
 		return []byte(signingKey)
@@ -61,4 +68,26 @@ func (svc *authService) checkRefreshTokenExpiry(token *refreshToken) error {
 		}
 	}
 	return nil
+}
+
+func RefreshTokenFromTokenString(tokenStr string) (*refreshToken, error) {
+	claims, err := util.ParseWithClaims(tokenStr)
+	if err != nil {
+		return nil, err
+	}
+	return &refreshToken{
+		string:   tokenStr,
+		userId:   claims.UserId,
+		issuedAt: claims.IssuedAt,
+	}, nil
+}
+
+// returns true if this token is near the expiration time
+func (tkn *refreshToken) IsNearEndOfLife() bool {
+	return tkn.nearEOL
+}
+
+// returns the user id stored inside the token
+func (tkn *refreshToken) UserId() int64 {
+	return tkn.userId
 }

@@ -21,7 +21,6 @@ func Test_GenerateAccessToken(t *testing.T) {
 			userId: 245,
 		},
 	}
-
 	for tname, tcase := range tests {
 		t.Run(tname, func(t *testing.T) {
 			jwt.TimeFunc = tcase.timer.Now
@@ -56,7 +55,6 @@ func Test_GenerateRefreshToken(t *testing.T) {
 			wantsErr: true,
 		},
 	}
-
 	for tname, tcase := range tests {
 		t.Run(tname, func(t *testing.T) {
 			jwt.TimeFunc = tcase.timer.Now
@@ -69,6 +67,8 @@ func Test_GenerateRefreshToken(t *testing.T) {
 				assert.NoError(t, err)
 				parts := strings.Split(tokenStr, ".")
 				assert.Equal(t, 3, len(parts))
+				refreshToken, _ := RefreshTokenFromTokenString(tokenStr)
+				assert.Equal(t, tcase.userId, refreshToken.UserId())
 			}
 		})
 	}
@@ -145,10 +145,33 @@ func Test_ValidateRefreshToken(t *testing.T) {
 				assert.NoError(t, err)
 			}
 			if tcase.expectedEOL {
-				assert.True(t, tcase.refreshToken.IsAtEndOfLife())
+				assert.True(t, tcase.refreshToken.IsNearEndOfLife())
 			} else {
-				assert.False(t, tcase.refreshToken.IsAtEndOfLife())
+				assert.False(t, tcase.refreshToken.IsNearEndOfLife())
 			}
 		})
 	}
+}
+
+func Test_TokenFuncs(t *testing.T) {
+	refreshToken, err := RefreshTokenFromTokenString("try parsing this")
+	assert.Nil(t, refreshToken)
+	assert.NotNil(t, err)
+}
+
+type TestAuthRepo struct {
+	err          error
+	refreshToken *refreshToken
+}
+
+func (trepo *TestAuthRepo) StoreRefreshToken(token *refreshToken) error {
+	return trepo.err
+}
+
+func (trepo *TestAuthRepo) ValidateRefreshToken(token *refreshToken) error {
+	return trepo.err
+}
+
+func (trepo *TestAuthRepo) GetLatestRefreshToken(userId int64) *refreshToken {
+	return trepo.refreshToken
 }

@@ -34,5 +34,5 @@ type AuthRepo interface {
 
 type AuthCleaner interface {
 	// Remove any refresh tokens from the database that are expired
-	CleanupExpiredRefreshTokens(since int64)
+	CleanupExpiredRefreshTokens(since int64) error
 }

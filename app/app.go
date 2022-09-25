@@ -36,7 +36,7 @@ const refreshTokenTimeLimit = 60
 func (app *App) BackgroundCleaner(authCleaner auth.AuthCleaner) {
 	go func() {
 		for range app.timer.Tick(auth.RefreshTokenCleanerRate) {
-			authCleaner.CleanupExpiredRefreshTokens(app.timer.Now().Unix() - refreshTokenTimeLimit)
+			_ = authCleaner.CleanupExpiredRefreshTokens(app.timer.Now().Unix() - refreshTokenTimeLimit)
 		}
 	}()
 }
@@ -146,7 +146,7 @@ func (app *App) Token(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var latestRefreshToken string
-	if token.IsAtEndOfLife() {
+	if token.IsNearEndOfLife() {
 		latestRefreshToken, _ = app.auth.GenerateRefreshToken(token.UserId())
 	}
 

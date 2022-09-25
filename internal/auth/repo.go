@@ -13,23 +13,16 @@ type authRepo struct {
 	log util.Logger
 }
 
-func NewAuthRepo(logger util.Logger) *authRepo {
-	panicker := func(err error) {
-		if err != nil {
-			panic(err)
-		}
-	}
-	db, err := sql.Open("sqlite3", "./wordbubble.db")
-	panicker(err)
-	_, err = db.Exec(`
-	CREATE TABLE IF NOT EXISTS tokens (
-		user_id INTEGER NOT NULL,  
-		refresh_token TEXT NOT NULL,
-		issued_at INTEGER NOT NULL,
-		FOREIGN KEY(user_id) REFERENCES users(user_id)
-	);`)
-	panicker(err)
-	return &authRepo{db, logger}
+func NewAuthRepo(logger util.Logger, db *sql.DB) *authRepo {
+	db.Exec(`
+		CREATE TABLE IF NOT EXISTS tokens (
+			user_id INTEGER NOT NULL,  
+			refresh_token TEXT NOT NULL,
+			issued_at INTEGER NOT NULL,
+			FOREIGN KEY(user_id) REFERENCES users(user_id)
+		);
+	`)
+	return &authRepo{log: logger, db: db}
 }
 
 func (repo *authRepo) StoreRefreshToken(token *refreshToken) error {
@@ -63,16 +56,13 @@ func (repo *authRepo) GetLatestRefreshToken(userId int64) *refreshToken {
 	return &refreshToken{string: val, issuedAt: issuedAt, userId: userId}
 }
 
-func (repo *authRepo) CleanupExpiredRefreshTokens(since int64) {
+func (repo *authRepo) CleanupExpiredRefreshTokens(since int64) error {
 	rs, err := repo.db.Exec(CleanupExpiredRefreshTokens, since)
 	if err != nil {
-		repo.log.Error("could not execute delete tokens: error: %s", err)
-		return
+		repo.log.Error("could not delete tokens: error: %s", err)
+		return errors.New("an error occurred cleaning up expired refresh tokens")
 	}
-	amt, err := rs.RowsAffected()
-	if err != nil {
-		repo.log.Error("could not successfully determine the amount of tokens that were deleted, error: %s", err)
-		return
-	}
+	amt, _ := rs.RowsAffected()
 	repo.log.Info("refresh token cleaner deleted: %d tokens", amt)
+	return nil
 }
