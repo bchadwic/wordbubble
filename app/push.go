@@ -40,6 +40,6 @@ func (app *App) Push(w http.ResponseWriter, r *http.Request) {
 		app.errorResponse(err, w)
 		return
 	}
-
-	app.respond("thank you!", http.StatusCreated, w)
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("thank you!"))
 }

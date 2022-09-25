@@ -32,6 +32,6 @@ func (app *App) Pop(w http.ResponseWriter, r *http.Request) {
 		app.errorResponse(resp.ErrNoWordBubble, w)
 		return
 	}
-
-	writeResponse(w, http.StatusOK, wordbubble)
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(wordbubble)
 }
