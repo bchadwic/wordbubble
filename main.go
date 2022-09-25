@@ -48,7 +48,7 @@ func main() {
 	http.HandleFunc("/pop", app.Pop)
 
 	logger.Info("starting refresh token cleaner with an interval of: %gs", auth.RefreshTokenCleanerRate.Seconds())
-	app.BackgroundCleaner(authRepo) // TODO make a timer interface to pass in
+	app.BackgroundCleaner(authRepo)
 
 	logger.Info("starting server on port %s", port)
 	err := http.ListenAndServe(port, nil)

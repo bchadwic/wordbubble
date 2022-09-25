@@ -25,9 +25,9 @@ func GetUserIdFromTokenString(tokenStr string) (int64, error) {
 }
 
 func ParseWithClaims(tokenStr string) (*model.TokenClaims, error) {
-	tokenClaims := &model.TokenClaims{} // TODO come back to this mapping
-	_, err := jwt.ParseWithClaims(tokenStr, tokenClaims, func(t *jwt.Token) (interface{}, error) {
+	var tokenClaims model.TokenClaims
+	_, err := jwt.ParseWithClaims(tokenStr, &tokenClaims, func(t *jwt.Token) (interface{}, error) {
 		return SigningKey(), nil
 	})
-	return tokenClaims, err
+	return &tokenClaims, err
 }
