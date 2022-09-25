@@ -15,6 +15,9 @@ type authService struct {
 }
 
 func NewAuthService(log util.Logger, repo AuthRepo, timer util.Timer, signingKey string) *authService {
+	util.SigningKey = func() []byte {
+		return []byte(signingKey)
+	}
 	return &authService{
 		log:        log,
 		repo:       repo,

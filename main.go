@@ -25,10 +25,7 @@ var port = func() string {
 
 func main() {
 	logger := newLogger("main")
-	timer := util.NewTime()
-	util.SigningKey = func() []byte {
-		return []byte(os.Getenv("WB_SIGNING_KEY"))
-	}
+	timer := util.NewTimer()
 	wbRepo := wb.NewWordBubbleRepo(newLogger("wb_repo"))
 	usersRepo := user.NewUserRepo(newLogger("users_repo"))
 	authRepo := auth.NewAuthRepo(newLogger("auth_repo"))
