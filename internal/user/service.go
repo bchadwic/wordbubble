@@ -8,15 +8,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type UserService interface {
-	// add a new user
-	AddUser(user *model.User) error
-	// retrieve everything about a user, except sensitive info, using a string that could be a username or an email
-	RetrieveUserByString(userStr string) *model.User
-	// retrieve everything about a user using by a string that could be a username or an email and the user's unencrypted password
-	RetrieveAuthenticatedUserByString(userStr, password string) *model.User
-}
-
 type userService struct {
 	repo UserRepo
 	log  util.Logger

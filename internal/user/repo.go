@@ -8,44 +8,27 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-type UserRepo interface {
-	AddUser(user *model.User) (int64, error)
-	RetrieveUserByString(userStr string) *model.User
-}
-
 type userRepo struct {
 	db  *sql.DB
 	log util.Logger
 }
 
-func NewUserRepo(logger util.Logger) *userRepo {
-	panicker := func(err error) {
-		if err != nil {
-			panic(err)
-		}
-	}
-	db, err := sql.Open("sqlite3", "./wordbubble.db")
-	panicker(err)
-	_, err = db.Exec(`
-	CREATE TABLE IF NOT EXISTS users (
-		user_id INTEGER PRIMARY KEY AUTOINCREMENT,
-		created_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-		updated_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-		username TEXT UNIQUE NOT NULL,
-		email TEXT UNIQUE NOT NULL,
-		password TEXT NOT NULL
-	);`)
-	panicker(err)
+func NewUserRepo(logger util.Logger, db *sql.DB) *userRepo {
+	db.Exec(`
+		CREATE TABLE IF NOT EXISTS users (
+			user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+			created_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+			updated_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+			username TEXT UNIQUE NOT NULL,
+			email TEXT UNIQUE NOT NULL,
+			password TEXT NOT NULL
+		);
+	`)
 	return &userRepo{db, logger}
 }
 
 func (repo *userRepo) AddUser(user *model.User) (int64, error) {
-	stmt, err := repo.db.Prepare(`INSERT INTO users(username, email, password) VALUES (?, ?, ?);`)
-	if err != nil {
-		repo.log.Error("prepared statement error for adding user: %s, error: %s", user.Username, err)
-		return 0, err
-	}
-	res, err := stmt.Exec(user.Username, user.Email, user.Password)
+	res, err := repo.db.Exec(AddUser, user.Username, user.Email, user.Password)
 	if err != nil {
 		repo.log.Error("executing error for adding user: %s, error: %s", user.Username, err)
 		return 0, err
@@ -54,30 +37,14 @@ func (repo *userRepo) AddUser(user *model.User) (int64, error) {
 }
 
 func (repo *userRepo) RetrieveUserByString(userStr string) *model.User {
-	// TODO log the error once we get it back
-	var stmt *sql.Stmt
-	var err error
+	var row *sql.Row
 	switch {
 	case util.ValidEmail(userStr) == nil:
-		stmt, err = repo.db.Prepare(`SELECT user_id, username, email, password FROM users WHERE email = ?`)
+		row = repo.db.QueryRow(RetrieveUserByEmail, userStr)
 	case util.ValidUsername(userStr) == nil:
-		stmt, err = repo.db.Prepare(`SELECT user_id, username, email, password FROM users WHERE username = ?`)
+		row = repo.db.QueryRow(RetrieveUserByUsername, userStr)
 	default:
 		repo.log.Info("couldn't determine if the string passed is a username or an email")
-		return nil
-	}
-	if err != nil {
-		repo.log.Error("prepared statement error for retrieving user by string, user: %s, error: %s", userStr, err)
-		return nil
-	}
-	row, err := stmt.Query(userStr)
-	if err != nil {
-		repo.log.Error("querying error for retrieving user by string: %s, error: %s", userStr, err)
-		return nil
-	}
-	defer row.Close()
-	if !row.Next() {
-		repo.log.Info("could not find user in database, user: %s", userStr)
 		return nil
 	}
 	var dbUser model.User
