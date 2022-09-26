@@ -1,0 +1,68 @@
+package user
+
+import (
+	"database/sql"
+	"testing"
+
+	"github.com/bchadwic/wordbubble/model"
+	"github.com/bchadwic/wordbubble/resp"
+	"github.com/bchadwic/wordbubble/util"
+	"github.com/stretchr/testify/assert"
+)
+
+func NewTestDB() *sql.DB {
+	db, err := sql.Open("sqlite3", ":memory:")
+	if err != nil {
+		panic(err)
+	}
+	return db
+}
+
+func Test_HappyPath(t *testing.T) {
+	repo := NewUserRepo(util.TestLogger(), NewTestDB())
+
+	expected := &model.User{
+		Id:       1,
+		Username: "ben",
+		Password: "test-password",
+		Email:    "benchadwick87@gmail.com",
+	}
+
+	// someone signs up as a user
+	actualId, err := repo.AddUser(expected)
+	assert.NoError(t, err)
+	assert.Equal(t, expected.Id, actualId)
+
+	// user needs to get a token with a user id from username
+	actual, err := repo.RetrieveUserByUsername("ben")
+	assert.Nil(t, err)
+	assert.Equal(t, expected.Id, actual.Id)
+	assert.Equal(t, expected.Username, actual.Username)
+	assert.Equal(t, expected.Email, actual.Email)
+	assert.Equal(t, expected.Password, actual.Password)
+
+	// same as previous step but with an email
+	actual, err = repo.RetrieveUserByEmail("benchadwick87@gmail.com")
+	assert.Nil(t, err)
+	assert.Equal(t, expected.Id, actual.Id)
+	assert.Equal(t, expected.Username, actual.Username)
+	assert.Equal(t, expected.Email, actual.Email)
+	assert.Equal(t, expected.Password, actual.Password)
+
+	// misstyped my email logining in
+	actual, err = repo.RetrieveUserByEmail("benchadwic87@gmail.com")
+	assert.NotNil(t, err)
+	assert.ErrorIs(t, resp.ErrUnknownUser, err)
+	assert.Nil(t, actual)
+}
+
+func Test_NotHappyPath(t *testing.T) {
+	repo := NewUserRepo(util.TestLogger(), NewTestDB())
+
+	repo.db.Close()
+	// an error occurs while adding a user
+	id, err := repo.AddUser(&model.User{})
+	assert.Equal(t, int64(0), id)
+	assert.NotNil(t, err)
+	assert.ErrorIs(t, resp.ErrCouldNotAddUser, err)
+}
