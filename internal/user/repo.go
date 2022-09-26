@@ -2,8 +2,10 @@ package user
 
 import (
 	"database/sql"
+	"errors"
 
 	"github.com/bchadwic/wordbubble/model"
+	"github.com/bchadwic/wordbubble/resp"
 	"github.com/bchadwic/wordbubble/util"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -30,27 +32,26 @@ func NewUserRepo(logger util.Logger, db *sql.DB) *userRepo {
 func (repo *userRepo) AddUser(user *model.User) (int64, error) {
 	res, err := repo.db.Exec(AddUser, user.Username, user.Email, user.Password)
 	if err != nil {
-		repo.log.Error("executing error for adding user: %s, error: %s", user.Username, err)
-		return 0, err
+		return 0, resp.ErrCouldNotAddUser
 	}
-	return res.LastInsertId()
+	return res.LastInsertId() // sqlite3 supports last id, error is nil
 }
 
-func (repo *userRepo) RetrieveUserByString(userStr string) *model.User {
-	var row *sql.Row
-	switch {
-	case util.ValidEmail(userStr) == nil:
-		row = repo.db.QueryRow(RetrieveUserByEmail, userStr)
-	case util.ValidUsername(userStr) == nil:
-		row = repo.db.QueryRow(RetrieveUserByUsername, userStr)
-	default:
-		repo.log.Info("couldn't determine if the string passed is a username or an email")
-		return nil
-	}
+func (repo *userRepo) RetrieveUserByEmail(email string) (*model.User, error) {
+	return repo.mapUserRow(repo.db.QueryRow(RetrieveUserByEmail, email))
+}
+
+func (repo *userRepo) RetrieveUserByUsername(username string) (*model.User, error) {
+	return repo.mapUserRow(repo.db.QueryRow(RetrieveUserByUsername, username))
+}
+
+func (repo *userRepo) mapUserRow(row *sql.Row) (*model.User, error) {
 	var dbUser model.User
 	if err := row.Scan(&dbUser.Id, &dbUser.Username, &dbUser.Email, &dbUser.Password); err != nil {
-		repo.log.Error("could not map db user to user struct, user: %s, error: %s", userStr, err)
-		return nil
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, resp.ErrUnknownUser
+		}
+		return nil, resp.ErrSQLMappingError
 	}
-	return &dbUser
+	return &dbUser, nil
 }

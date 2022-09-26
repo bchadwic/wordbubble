@@ -12,12 +12,13 @@ type UserService interface {
 	// add a new user
 	AddUser(user *model.User) error
 	// retrieve everything about a user, except sensitive info, using a string that could be a username or an email
-	RetrieveUserByString(userStr string) *model.User
+	RetrieveUnauthenticatedUser(userStr string) (*model.User, error)
 	// retrieve everything about a user using by a string that could be a username or an email and the user's unencrypted password
-	RetrieveAuthenticatedUserByString(userStr, password string) *model.User
+	RetrieveAuthenticatedUser(userStr, password string) (*model.User, error)
 }
 
 type UserRepo interface {
 	AddUser(user *model.User) (int64, error)
-	RetrieveUserByString(userStr string) *model.User
+	RetrieveUserByEmail(userStr string) (*model.User, error)
+	RetrieveUserByUsername(userStr string) (*model.User, error)
 }
