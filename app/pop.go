@@ -9,7 +9,7 @@ import (
 
 func (wb *app) Pop(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
-		wb.errorResponse(resp.ErrInvalidMethod, w)
+		wb.errorResponse(resp.ErrInvalidHttpMethod, w)
 		return
 	}
 

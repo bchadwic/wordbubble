@@ -30,7 +30,7 @@ func (svc *userService) AddUser(user *model.User) error {
 		return resp.ErrCouldNotBeHashPassword
 	}
 	user.Password = string(hashedPasswordBytes)
-	id, err := svc.repo.AddUser(user)
+	id, err := svc.repo.addUser(user)
 	if err != nil {
 		return err
 	}
@@ -64,14 +64,14 @@ func (svc *userService) RetrieveAuthenticatedUser(userStr, password string) (*mo
 // give a code on which uniqueness constraint has been violated
 func (svc *userService) verifyUserUniqueness(uniqueUser *model.User) error {
 	var exists bool
-	user, err := svc.repo.RetrieveUserByUsername(uniqueUser.Username)
+	user, err := svc.repo.retrieveUserByUsername(uniqueUser.Username)
 	if exists = user != nil; exists || !errors.Is(err, resp.ErrUnknownUser) {
 		if exists {
 			return resp.ErrUserWithUsernameAlreadyExists
 		} // if the error from repo is not a mapping error, we can't determine if the user exists
 		return resp.ErrCouldNotDetermineUserExistence
 	}
-	user, err = svc.repo.RetrieveUserByEmail(uniqueUser.Email)
+	user, err = svc.repo.retrieveUserByEmail(uniqueUser.Email)
 	if exists = user != nil; exists || !errors.Is(err, resp.ErrUnknownUser) {
 		if exists {
 			return resp.ErrUserWithEmailAlreadyExists
@@ -84,9 +84,9 @@ func (svc *userService) verifyUserUniqueness(uniqueUser *model.User) error {
 func (svc *userService) retrieveUserByString(userStr string) (*model.User, error) {
 	switch {
 	case util.ValidEmail(userStr) == nil:
-		return svc.repo.RetrieveUserByEmail(userStr)
+		return svc.repo.retrieveUserByEmail(userStr)
 	case util.ValidUsername(userStr) == nil:
-		return svc.repo.RetrieveUserByUsername(userStr)
+		return svc.repo.retrieveUserByUsername(userStr)
 	default:
 		return nil, resp.ErrCouldNotDetermineUserType
 	}

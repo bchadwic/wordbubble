@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"testing"
 
+	"github.com/bchadwic/wordbubble/resp"
 	"github.com/bchadwic/wordbubble/util"
 	"github.com/stretchr/testify/assert"
 )
@@ -26,7 +27,7 @@ func Test_HappyPath(t *testing.T) {
 		userId:   userId,
 		issuedAt: issuedAt,
 	}
-	err := repo.StoreRefreshToken(token)
+	err := repo.storeRefreshToken(token)
 	assert.NoError(t, err)
 
 	// A little while later a user needs to validate their refresh token to get a new access token
@@ -34,12 +35,12 @@ func Test_HappyPath(t *testing.T) {
 		string: tokenStr,
 		userId: userId,
 	}
-	err = repo.ValidateRefreshToken(token)
+	err = repo.validateRefreshToken(token)
 	assert.NoError(t, err)
 	assert.Equal(t, issuedAt, token.issuedAt)
 
 	// On a different device, a user uses a close to EOL token thus triggering a GetLatestRefreshToken
-	token = repo.GetLatestRefreshToken(userId)
+	token = repo.getLatestRefreshToken(userId)
 	assert.NotNil(t, token)
 	assert.Equal(t, tokenStr, token.string)
 	assert.Equal(t, userId, token.UserId())
@@ -48,7 +49,7 @@ func Test_HappyPath(t *testing.T) {
 	// The user has been away from some time, time to clean up the token
 	repo.CleanupExpiredRefreshTokens(issuedAt + 1)
 	// when the user comes back, they are faced with a login flow
-	token = repo.GetLatestRefreshToken(userId)
+	token = repo.getLatestRefreshToken(userId)
 	assert.Nil(t, token)
 
 	// malicious user tries to validate an old token
@@ -56,9 +57,9 @@ func Test_HappyPath(t *testing.T) {
 		string: tokenStr,
 		userId: userId,
 	}
-	err = repo.ValidateRefreshToken(token)
+	err = repo.validateRefreshToken(token)
 	assert.NotNil(t, err)
-	assert.Equal(t, "could not validate issued time of refresh token, please login again", err.Error())
+	assert.Equal(t, resp.ErrCouldNotValidateRefreshToken.Error(), err.Error())
 }
 
 func Test_NotSoHappyPath(t *testing.T) {
@@ -66,11 +67,11 @@ func Test_NotSoHappyPath(t *testing.T) {
 
 	// db closed
 	repo.db.Close()
-	err := repo.StoreRefreshToken(&refreshToken{})
+	err := repo.storeRefreshToken(&refreshToken{})
 	assert.NotNil(t, err)
-	assert.Equal(t, "could not successfully store refresh token on server", err.Error())
+	assert.Equal(t, resp.ErrCouldNotStoreRefreshToken.Error(), err.Error())
 
 	err = repo.CleanupExpiredRefreshTokens(0)
 	assert.NotNil(t, err)
-	assert.Equal(t, "an error occurred cleaning up expired refresh tokens", err.Error())
+	assert.Equal(t, resp.ErrCouldNotCleanupTokens.Error(), err.Error())
 }

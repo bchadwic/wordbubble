@@ -1,12 +1,13 @@
 package util
 
 import (
-	"errors"
 	"fmt"
+	"net/http"
 	"net/mail"
 	"unicode"
 
 	"github.com/bchadwic/wordbubble/model"
+	"github.com/bchadwic/wordbubble/resp"
 )
 
 const (
@@ -34,10 +35,10 @@ func ValidUser(user *model.User) error {
 // validate that the string passed in is an email, and that it's not longer than maxEmailLength
 func ValidEmail(email string) error {
 	if _, err := mail.ParseAddress(email); err != nil {
-		return errors.New("email in request is not a valid email")
+		return resp.ErrEmailIsNotValid
 	}
 	if len(email) > maxEmailLength {
-		return errors.New("no one should have an email this long")
+		return resp.ErrEmailIsTooLong
 	}
 	return nil
 }
@@ -45,15 +46,15 @@ func ValidEmail(email string) error {
 // validate username, shorter than maxUsernameLength, longer than "", only letters, numbers or '_'s
 func ValidUsername(username string) error {
 	if len(username) > maxUsernameLength {
-		return errors.New("no one should have a username this long")
+		return resp.ErrUsernameIsTooLong
 	} else if len(username) == 0 {
-		return errors.New("a username is required")
+		return resp.ErrUsernameIsNotLongEnough
 	}
 	for _, c := range username {
 		if unicode.IsLetter(c) || unicode.IsNumber(c) || c == '_' {
 			continue
 		}
-		return errors.New("username must only consist of letters, numbers, or '_'")
+		return resp.ErrUsernameInvalidChars
 	}
 	return nil
 }
@@ -109,15 +110,18 @@ func ValidPassword(password string) error {
 		last = "one special character"
 	}
 	if count == 1 {
-		return errors.New(errStr + last)
+		return resp.NewErrorResp(errStr+last, http.StatusBadRequest)
 	}
-	return errors.New(errStr + "and " + last)
+	return resp.NewErrorResp(errStr+"and"+last, http.StatusBadRequest)
 }
 
 func ValidWordBubble(wb *model.WordBubble) error {
 	len := len(wb.Text)
 	if len < MinWordBubbleLength || len > MaxWordBubbleLength {
-		return fmt.Errorf("wordbubble sent is invalid, must be inbetween %d-%d characters, received a length of %d", MinWordBubbleLength, MaxWordBubbleLength, len)
+		return resp.NewErrorResp(
+			fmt.Sprintf("wordbubble sent is invalid, must be inbetween %d-%d characters, received a length of %d", MinWordBubbleLength, MaxWordBubbleLength, len),
+			http.StatusBadRequest,
+		)
 	}
 	return nil
 }

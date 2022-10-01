@@ -29,12 +29,12 @@ func Test_HappyPath(t *testing.T) {
 	}
 
 	// someone signs up as a user
-	actualId, err := repo.AddUser(expected)
+	actualId, err := repo.addUser(expected)
 	assert.NoError(t, err)
 	assert.Equal(t, expected.Id, actualId)
 
 	// user needs to get a token with a user id from username
-	actual, err := repo.RetrieveUserByUsername("ben")
+	actual, err := repo.retrieveUserByUsername("ben")
 	assert.Nil(t, err)
 	assert.Equal(t, expected.Id, actual.Id)
 	assert.Equal(t, expected.Username, actual.Username)
@@ -42,7 +42,7 @@ func Test_HappyPath(t *testing.T) {
 	assert.Equal(t, expected.Password, actual.Password)
 
 	// same as previous step but with an email
-	actual, err = repo.RetrieveUserByEmail("benchadwick87@gmail.com")
+	actual, err = repo.retrieveUserByEmail("benchadwick87@gmail.com")
 	assert.Nil(t, err)
 	assert.Equal(t, expected.Id, actual.Id)
 	assert.Equal(t, expected.Username, actual.Username)
@@ -50,7 +50,7 @@ func Test_HappyPath(t *testing.T) {
 	assert.Equal(t, expected.Password, actual.Password)
 
 	// misstyped my email logining in
-	actual, err = repo.RetrieveUserByEmail("benchadwic87@gmail.com")
+	actual, err = repo.retrieveUserByEmail("benchadwic87@gmail.com")
 	assert.NotNil(t, err)
 	assert.ErrorIs(t, resp.ErrUnknownUser, err)
 	assert.Nil(t, actual)
@@ -60,21 +60,21 @@ func Test_NotSoHappyPath(t *testing.T) {
 	repo := NewUserRepo(util.TestLogger(), NewTestDB())
 
 	// simulate a mapping error between database and application
-	repo.AddUser(&model.User{
+	repo.addUser(&model.User{
 		Username: "ben",
 	})
 	_, err := repo.db.Exec(`ALTER TABLE users RENAME COLUMN username TO user_name;`)
 	if err != nil {
 		panic(err)
 	}
-	user, err := repo.RetrieveUserByUsername("ben")
+	user, err := repo.retrieveUserByUsername("ben")
 	assert.Nil(t, user)
 	assert.NotNil(t, err)
 	assert.ErrorIs(t, resp.ErrSQLMappingError, err)
 
 	repo.db.Close()
 	// an error occurs while adding a user
-	id, err := repo.AddUser(&model.User{})
+	id, err := repo.addUser(&model.User{})
 	assert.Equal(t, int64(0), id)
 	assert.NotNil(t, err)
 	assert.ErrorIs(t, resp.ErrCouldNotAddUser, err)
