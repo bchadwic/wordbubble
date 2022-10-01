@@ -164,14 +164,14 @@ type testAuthRepo struct {
 	refreshToken *refreshToken
 }
 
-func (trepo *testAuthRepo) StoreRefreshToken(token *refreshToken) error {
+func (trepo *testAuthRepo) storeRefreshToken(token *refreshToken) error {
 	return trepo.err
 }
 
-func (trepo *testAuthRepo) ValidateRefreshToken(token *refreshToken) error {
+func (trepo *testAuthRepo) validateRefreshToken(token *refreshToken) error {
 	return trepo.err
 }
 
-func (trepo *testAuthRepo) GetLatestRefreshToken(userId int64) *refreshToken {
+func (trepo *testAuthRepo) getLatestRefreshToken(userId int64) *refreshToken {
 	return trepo.refreshToken
 }

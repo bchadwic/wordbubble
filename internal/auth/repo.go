@@ -22,10 +22,13 @@ func NewAuthRepo(logger util.Logger, db *sql.DB) *authRepo {
 			FOREIGN KEY(user_id) REFERENCES users(user_id)
 		);
 	`)
-	return &authRepo{log: logger, db: db}
+	return &authRepo{
+		log: logger,
+		db:  db,
+	}
 }
 
-func (repo *authRepo) StoreRefreshToken(token *refreshToken) error {
+func (repo *authRepo) storeRefreshToken(token *refreshToken) error {
 	_, err := repo.db.Exec(StoreRefreshToken, token.UserId(), token.string, token.issuedAt)
 	if err != nil {
 		repo.log.Error("could not execute statement for user: %d, error: %s", err)
@@ -34,7 +37,7 @@ func (repo *authRepo) StoreRefreshToken(token *refreshToken) error {
 	return nil
 }
 
-func (repo *authRepo) ValidateRefreshToken(token *refreshToken) error {
+func (repo *authRepo) validateRefreshToken(token *refreshToken) error {
 	row := repo.db.QueryRow(ValidateRefreshToken, token.UserId(), token.string)
 	var issuedAt int64
 	if err := row.Scan(&issuedAt); err != nil {
@@ -45,7 +48,7 @@ func (repo *authRepo) ValidateRefreshToken(token *refreshToken) error {
 	return nil
 }
 
-func (repo *authRepo) GetLatestRefreshToken(userId int64) *refreshToken {
+func (repo *authRepo) getLatestRefreshToken(userId int64) *refreshToken {
 	row := repo.db.QueryRow(GetLatestRefreshToken, userId)
 	var issuedAt int64
 	var val string

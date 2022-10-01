@@ -21,9 +21,9 @@ func (svc *wordBubbleService) AddNewWordBubble(userId int64, wb *model.WordBubbl
 	if err := util.ValidWordBubble(wb); err != nil {
 		return err
 	}
-	return svc.repo.AddNewWordBubble(userId, wb)
+	return svc.repo.addNewWordBubble(userId, wb)
 }
 
 func (svc *wordBubbleService) RemoveAndReturnLatestWordBubbleForUserId(userId int64) *model.WordBubble {
-	return svc.repo.RemoveAndReturnLatestWordBubbleForUserId(userId)
+	return svc.repo.removeAndReturnLatestWordBubbleForUserId(userId)
 }

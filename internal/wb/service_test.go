@@ -108,10 +108,10 @@ type testWordBubbleRepo struct {
 	wordbubble *model.WordBubble
 }
 
-func (trepo *testWordBubbleRepo) AddNewWordBubble(userId int64, wb *model.WordBubble) error {
+func (trepo *testWordBubbleRepo) addNewWordBubble(userId int64, wb *model.WordBubble) error {
 	return trepo.err
 }
 
-func (trepo *testWordBubbleRepo) RemoveAndReturnLatestWordBubbleForUserId(userId int64) *model.WordBubble {
+func (trepo *testWordBubbleRepo) removeAndReturnLatestWordBubbleForUserId(userId int64) *model.WordBubble {
 	return trepo.wordbubble
 }

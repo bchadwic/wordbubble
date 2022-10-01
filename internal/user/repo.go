@@ -26,10 +26,13 @@ func NewUserRepo(logger util.Logger, db *sql.DB) *userRepo {
 			password TEXT NOT NULL
 		);
 	`)
-	return &userRepo{db, logger}
+	return &userRepo{
+		db:  db,
+		log: logger,
+	}
 }
 
-func (repo *userRepo) AddUser(user *model.User) (int64, error) {
+func (repo *userRepo) addUser(user *model.User) (int64, error) {
 	res, err := repo.db.Exec(AddUser, user.Username, user.Email, user.Password)
 	if err != nil {
 		return 0, resp.ErrCouldNotAddUser
@@ -37,11 +40,11 @@ func (repo *userRepo) AddUser(user *model.User) (int64, error) {
 	return res.LastInsertId() // sqlite3 supports last id, error is nil
 }
 
-func (repo *userRepo) RetrieveUserByEmail(email string) (*model.User, error) {
+func (repo *userRepo) retrieveUserByEmail(email string) (*model.User, error) {
 	return repo.mapUserRow(repo.db.QueryRow(RetrieveUserByEmail, email))
 }
 
-func (repo *userRepo) RetrieveUserByUsername(username string) (*model.User, error) {
+func (repo *userRepo) retrieveUserByUsername(username string) (*model.User, error) {
 	return repo.mapUserRow(repo.db.QueryRow(RetrieveUserByUsername, username))
 }
 

@@ -8,17 +8,26 @@ const (
 	RetrieveUserByUsername = `SELECT user_id, username, email, password FROM users WHERE username = ?`
 )
 
+// UserService is the interface that the application
+// uses to interact with user information
 type UserService interface {
-	// add a new user
+	// adds a new user
 	AddUser(user *model.User) error
-	// retrieve everything about a user, except sensitive info, using a string that could be a username or an email
+	// retrieve everything about a user by a user string (email or username), without a password
 	RetrieveUnauthenticatedUser(userStr string) (*model.User, error)
-	// retrieve everything about a user using by a string that could be a username or an email and the user's unencrypted password
+	// retrieve everything about a user by user string (email or username), without a password
+	// this func validates that the password matches what's in the database
+	// an error is returned if it does not
 	RetrieveAuthenticatedUser(userStr, password string) (*model.User, error)
 }
 
+// UserRepo is the interface that the service layer
+// interacts with to access user information
 type UserRepo interface {
-	AddUser(user *model.User) (int64, error)
-	RetrieveUserByEmail(email string) (*model.User, error)
-	RetrieveUserByUsername(username string) (*model.User, error)
+	// adds a new user to the database
+	addUser(user *model.User) (int64, error)
+	// retrieve user details by email
+	retrieveUserByEmail(email string) (*model.User, error)
+	// retrieve user details by username
+	retrieveUserByUsername(username string) (*model.User, error)
 }

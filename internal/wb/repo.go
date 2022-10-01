@@ -25,12 +25,13 @@ func NewWordBubbleRepo(logger util.Logger, db *sql.DB) *wordBubbleRepo {
 			FOREIGN KEY(user_id) REFERENCES users(user_id)
 		);
 	`)
-	return &wordBubbleRepo{log: logger, db: db}
+	return &wordBubbleRepo{
+		log: logger,
+		db:  db,
+	}
 }
 
-type OutOfWordBubbleSlots error
-
-func (repo *wordBubbleRepo) AddNewWordBubble(userId int64, wb *model.WordBubble) error {
+func (repo *wordBubbleRepo) addNewWordBubble(userId int64, wb *model.WordBubble) error {
 	rs, err := repo.db.Exec(AddNewWordBubble, userId, wb.Text, userId, maxAmountOfWordBubbles)
 	if err != nil {
 		repo.log.Error("execute error for adding a wordbubble %+v for user: %d, error: %s", wb, userId, err)
@@ -43,7 +44,7 @@ func (repo *wordBubbleRepo) AddNewWordBubble(userId int64, wb *model.WordBubble)
 	return nil
 }
 
-func (repo *wordBubbleRepo) RemoveAndReturnLatestWordBubbleForUserId(userId int64) *model.WordBubble {
+func (repo *wordBubbleRepo) removeAndReturnLatestWordBubbleForUserId(userId int64) *model.WordBubble {
 	row := repo.db.QueryRow(RemoveAndReturnLatestWordBubbleForUserId, userId)
 	var wordbubble model.WordBubble
 	if err := row.Scan(&wordbubble.Text); err != nil {

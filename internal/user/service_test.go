@@ -215,14 +215,14 @@ type testUserRepo struct {
 	userRetrieveUserByUsername *model.User
 }
 
-func (trepo *testUserRepo) AddUser(user *model.User) (int64, error) {
+func (trepo *testUserRepo) addUser(user *model.User) (int64, error) {
 	return trepo.lastInsertId, trepo.errAddUser
 }
 
-func (trepo *testUserRepo) RetrieveUserByEmail(userStr string) (*model.User, error) {
+func (trepo *testUserRepo) retrieveUserByEmail(userStr string) (*model.User, error) {
 	return trepo.userRetrieveUserByEmail, trepo.errRetrieveEmail
 }
 
-func (trepo *testUserRepo) RetrieveUserByUsername(userStr string) (*model.User, error) {
+func (trepo *testUserRepo) retrieveUserByUsername(userStr string) (*model.User, error) {
 	return trepo.userRetrieveUserByUsername, trepo.errRetrieveUser
 }

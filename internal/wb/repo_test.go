@@ -33,7 +33,7 @@ func Test_HappyPath(t *testing.T) {
 	repo := NewWordBubbleRepo(util.TestLogger(), NewTestDB())
 
 	// A non existent user adds a wordbubble
-	err := repo.AddNewWordBubble(1, &model.WordBubble{})
+	err := repo.addNewWordBubble(1, &model.WordBubble{})
 	assert.NotNil(t, err)
 	assert.Equal(t, "FOREIGN KEY constraint failed", err.Error())
 
@@ -44,21 +44,21 @@ func Test_HappyPath(t *testing.T) {
 	}
 	// A user creates the max amount of wordbubbles
 	for i := 0; i < maxAmountOfWordBubbles; i++ {
-		err = repo.AddNewWordBubble(1, &model.WordBubble{
+		err = repo.addNewWordBubble(1, &model.WordBubble{
 			Text: fmt.Sprintf("This is wordbubble #%d", i+1),
 		})
 		assert.Nil(t, err)
 	}
 	// A user tries to add one above the max amount, causing an error to be returned
-	err = repo.AddNewWordBubble(1, &model.WordBubble{})
+	err = repo.addNewWordBubble(1, &model.WordBubble{})
 	assert.NotNil(t, err)
 	assert.Error(t, resp.ErrMaxAmountOfWordBubblesReached, err)
 	// A user wants space back so they start removing wordbubbles
 	for i := 0; i < maxAmountOfWordBubbles; i++ {
-		wordbubble := repo.RemoveAndReturnLatestWordBubbleForUserId(1)
+		wordbubble := repo.removeAndReturnLatestWordBubbleForUserId(1)
 		assert.Equal(t, fmt.Sprintf("This is wordbubble #%d", i+1), wordbubble.Text)
 	}
 	// A user tries to remove a non-existent wordbubble
-	wordbubble := repo.RemoveAndReturnLatestWordBubbleForUserId(1)
+	wordbubble := repo.removeAndReturnLatestWordBubbleForUserId(1)
 	assert.Nil(t, wordbubble)
 }

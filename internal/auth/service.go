@@ -43,7 +43,7 @@ func (svc *authService) GenerateRefreshToken(userId int64) (string, error) {
 	token, _ := RefreshTokenFromTokenString(
 		util.GenerateSignedToken(now.Unix(), now.Add(refreshTokenTimeLimit*time.Second).Unix(), userId),
 	)
-	if err := svc.repo.StoreRefreshToken(token); err != nil {
+	if err := svc.repo.storeRefreshToken(token); err != nil {
 		return "", err
 	}
 	return token.string, nil
@@ -53,7 +53,7 @@ func (svc *authService) ValidateRefreshToken(token *refreshToken) (err error) {
 	if err = svc.checkRefreshTokenExpiry(token); err != nil {
 		return
 	}
-	if err = svc.repo.ValidateRefreshToken(token); err != nil {
+	if err = svc.repo.validateRefreshToken(token); err != nil {
 		return
 	}
 	return
