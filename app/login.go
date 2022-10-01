@@ -22,13 +22,13 @@ func (wb *app) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	AuthenticateUser := wb.users.RetrieveAuthenticatedUserByString(reqBody.User, reqBody.Password)
-	if AuthenticateUser == nil {
-		wb.errorResponse(resp.ErrInvalidCredentials, w)
+	authenticatedUser, err := wb.users.RetrieveAuthenticatedUser(reqBody.User, reqBody.Password)
+	if err != nil {
+		wb.errorResponse(err, w)
 		return
 	}
 
-	refreshToken, err := wb.auth.GenerateRefreshToken(AuthenticateUser.Id)
+	refreshToken, err := wb.auth.GenerateRefreshToken(authenticatedUser.Id)
 	if err != nil {
 		wb.errorResponse(err, w)
 		return
@@ -37,7 +37,7 @@ func (wb *app) Login(w http.ResponseWriter, r *http.Request) {
 	resp := struct {
 		RefreshToken string `json:"refresh_token"`
 		AccessToken  string `json:"access_token"`
-	}{refreshToken, wb.auth.GenerateAccessToken(AuthenticateUser.Id)}
+	}{refreshToken, wb.auth.GenerateAccessToken(authenticatedUser.Id)}
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(resp)
 }

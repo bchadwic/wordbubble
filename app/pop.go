@@ -21,9 +21,9 @@ func (wb *app) Pop(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user := wb.users.RetrieveUserByString(reqBody.UserStr)
-	if user == nil {
-		wb.errorResponse(resp.ErrUnknownUser, w)
+	user, err := wb.users.RetrieveUnauthenticatedUser(reqBody.UserStr)
+	if err != nil {
+		wb.errorResponse(err, w)
 		return
 	}
 

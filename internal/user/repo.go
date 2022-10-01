@@ -2,88 +2,56 @@ package user
 
 import (
 	"database/sql"
+	"errors"
 
 	"github.com/bchadwic/wordbubble/model"
+	"github.com/bchadwic/wordbubble/resp"
 	"github.com/bchadwic/wordbubble/util"
 	_ "github.com/mattn/go-sqlite3"
 )
-
-type UserRepo interface {
-	AddUser(user *model.User) (int64, error)
-	RetrieveUserByString(userStr string) *model.User
-}
 
 type userRepo struct {
 	db  *sql.DB
 	log util.Logger
 }
 
-func NewUserRepo(logger util.Logger) *userRepo {
-	panicker := func(err error) {
-		if err != nil {
-			panic(err)
-		}
-	}
-	db, err := sql.Open("sqlite3", "./wordbubble.db")
-	panicker(err)
-	_, err = db.Exec(`
-	CREATE TABLE IF NOT EXISTS users (
-		user_id INTEGER PRIMARY KEY AUTOINCREMENT,
-		created_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-		updated_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-		username TEXT UNIQUE NOT NULL,
-		email TEXT UNIQUE NOT NULL,
-		password TEXT NOT NULL
-	);`)
-	panicker(err)
+func NewUserRepo(logger util.Logger, db *sql.DB) *userRepo {
+	db.Exec(`
+		CREATE TABLE IF NOT EXISTS users (
+			user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+			created_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+			updated_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+			username TEXT UNIQUE NOT NULL,
+			email TEXT UNIQUE NOT NULL,
+			password TEXT NOT NULL
+		);
+	`)
 	return &userRepo{db, logger}
 }
 
 func (repo *userRepo) AddUser(user *model.User) (int64, error) {
-	stmt, err := repo.db.Prepare(`INSERT INTO users(username, email, password) VALUES (?, ?, ?);`)
+	res, err := repo.db.Exec(AddUser, user.Username, user.Email, user.Password)
 	if err != nil {
-		repo.log.Error("prepared statement error for adding user: %s, error: %s", user.Username, err)
-		return 0, err
+		return 0, resp.ErrCouldNotAddUser
 	}
-	res, err := stmt.Exec(user.Username, user.Email, user.Password)
-	if err != nil {
-		repo.log.Error("executing error for adding user: %s, error: %s", user.Username, err)
-		return 0, err
-	}
-	return res.LastInsertId()
+	return res.LastInsertId() // sqlite3 supports last id, error is nil
 }
 
-func (repo *userRepo) RetrieveUserByString(userStr string) *model.User {
-	// TODO log the error once we get it back
-	var stmt *sql.Stmt
-	var err error
-	switch {
-	case util.ValidEmail(userStr) == nil:
-		stmt, err = repo.db.Prepare(`SELECT user_id, username, email, password FROM users WHERE email = ?`)
-	case util.ValidUsername(userStr) == nil:
-		stmt, err = repo.db.Prepare(`SELECT user_id, username, email, password FROM users WHERE username = ?`)
-	default:
-		repo.log.Info("couldn't determine if the string passed is a username or an email")
-		return nil
-	}
-	if err != nil {
-		repo.log.Error("prepared statement error for retrieving user by string, user: %s, error: %s", userStr, err)
-		return nil
-	}
-	row, err := stmt.Query(userStr)
-	if err != nil {
-		repo.log.Error("querying error for retrieving user by string: %s, error: %s", userStr, err)
-		return nil
-	}
-	defer row.Close()
-	if !row.Next() {
-		repo.log.Info("could not find user in database, user: %s", userStr)
-		return nil
-	}
+func (repo *userRepo) RetrieveUserByEmail(email string) (*model.User, error) {
+	return repo.mapUserRow(repo.db.QueryRow(RetrieveUserByEmail, email))
+}
+
+func (repo *userRepo) RetrieveUserByUsername(username string) (*model.User, error) {
+	return repo.mapUserRow(repo.db.QueryRow(RetrieveUserByUsername, username))
+}
+
+func (repo *userRepo) mapUserRow(row *sql.Row) (*model.User, error) {
 	var dbUser model.User
 	if err := row.Scan(&dbUser.Id, &dbUser.Username, &dbUser.Email, &dbUser.Password); err != nil {
-		repo.log.Error("could not map db user to user struct, user: %s, error: %s", userStr, err)
-		return nil
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, resp.ErrUnknownUser
+		}
+		return nil, resp.ErrSQLMappingError
 	}
-	return &dbUser
+	return &dbUser, nil
 }
