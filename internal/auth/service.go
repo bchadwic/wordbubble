@@ -1,9 +1,9 @@
 package auth
 
 import (
-	"errors"
 	"time"
 
+	"github.com/bchadwic/wordbubble/resp"
 	"github.com/bchadwic/wordbubble/util"
 )
 
@@ -64,7 +64,7 @@ func (svc *authService) checkRefreshTokenExpiry(token *refreshToken) error {
 	if timeLeft := refreshTokenTimeLimit - (svc.timer.Now().Unix() - token.issuedAt); timeLeft < ImminentExpirationWindow {
 		token.nearEOL = true
 		if timeLeft <= 0 {
-			return errors.New("refresh token is expired, please login again")
+			return resp.ErrRefreshTokenIsExpired
 		}
 	}
 	return nil

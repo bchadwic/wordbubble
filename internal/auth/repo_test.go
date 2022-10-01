@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"testing"
 
+	"github.com/bchadwic/wordbubble/resp"
 	"github.com/bchadwic/wordbubble/util"
 	"github.com/stretchr/testify/assert"
 )
@@ -58,7 +59,7 @@ func Test_HappyPath(t *testing.T) {
 	}
 	err = repo.validateRefreshToken(token)
 	assert.NotNil(t, err)
-	assert.Equal(t, "could not validate issued time of refresh token, please login again", err.Error())
+	assert.Equal(t, resp.ErrCouldNotValidateRefreshToken.Error(), err.Error())
 }
 
 func Test_NotSoHappyPath(t *testing.T) {
@@ -68,9 +69,9 @@ func Test_NotSoHappyPath(t *testing.T) {
 	repo.db.Close()
 	err := repo.storeRefreshToken(&refreshToken{})
 	assert.NotNil(t, err)
-	assert.Equal(t, "could not successfully store refresh token on server", err.Error())
+	assert.Equal(t, resp.ErrCouldNotStoreRefreshToken.Error(), err.Error())
 
 	err = repo.CleanupExpiredRefreshTokens(0)
 	assert.NotNil(t, err)
-	assert.Equal(t, "an error occurred cleaning up expired refresh tokens", err.Error())
+	assert.Equal(t, resp.ErrCouldNotCleanupTokens.Error(), err.Error())
 }

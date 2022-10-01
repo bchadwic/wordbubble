@@ -1,9 +1,8 @@
 package util
 
 import (
-	"errors"
-
 	"github.com/bchadwic/wordbubble/model"
+	"github.com/bchadwic/wordbubble/resp"
 	"github.com/golang-jwt/jwt"
 )
 
@@ -18,7 +17,7 @@ func GenerateSignedToken(iat, exp, userId int64) string {
 
 func GetUserIdFromTokenString(tokenStr string) (int64, error) {
 	if tokenClaims, err := ParseWithClaims(tokenStr); err != nil {
-		return 0, errors.New("token signature was found to be invalid")
+		return 0, resp.ErrInvalidTokenSignature
 	} else {
 		return tokenClaims.UserId, nil
 	}

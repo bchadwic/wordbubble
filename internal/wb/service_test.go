@@ -1,12 +1,13 @@
 package wb
 
 import (
-	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 	"testing"
 
 	"github.com/bchadwic/wordbubble/model"
+	"github.com/bchadwic/wordbubble/resp"
 	"github.com/bchadwic/wordbubble/util"
 	"github.com/stretchr/testify/assert"
 )
@@ -16,7 +17,7 @@ func Test_AddNewWordBubble(t *testing.T) {
 		wordbubble  *model.WordBubble
 		userId      int64
 		repo        WordBubbleRepo
-		expectedErr string
+		expectedErr error
 	}{
 		"valid": {
 			userId: 3462,
@@ -31,9 +32,9 @@ func Test_AddNewWordBubble(t *testing.T) {
 				Text: strings.Repeat(".", util.MinWordBubbleLength-1),
 			},
 			repo: &testWordBubbleRepo{},
-			expectedErr: fmt.Sprintf(
-				"wordbubble sent is invalid, must be inbetween %d-%d characters, received a length of %d",
-				util.MinWordBubbleLength, util.MaxWordBubbleLength, util.MinWordBubbleLength-1,
+			expectedErr: resp.NewErrorResp(
+				fmt.Sprintf("wordbubble sent is invalid, must be inbetween %d-%d characters, received a length of %d", util.MinWordBubbleLength, util.MaxWordBubbleLength, util.MinWordBubbleLength-1),
+				http.StatusBadRequest,
 			),
 		},
 		"invalid wordbubble text greater than max bound": {
@@ -42,9 +43,9 @@ func Test_AddNewWordBubble(t *testing.T) {
 				Text: strings.Repeat(".", util.MaxWordBubbleLength+1),
 			},
 			repo: &testWordBubbleRepo{},
-			expectedErr: fmt.Sprintf(
-				"wordbubble sent is invalid, must be inbetween %d-%d characters, received a length of %d",
-				util.MinWordBubbleLength, util.MaxWordBubbleLength, util.MaxWordBubbleLength+1,
+			expectedErr: resp.NewErrorResp(
+				fmt.Sprintf("wordbubble sent is invalid, must be inbetween %d-%d characters, received a length of %d", util.MinWordBubbleLength, util.MaxWordBubbleLength, util.MaxWordBubbleLength+1),
+				http.StatusBadRequest,
 			),
 		},
 		"invalid, database error": {
@@ -53,20 +54,20 @@ func Test_AddNewWordBubble(t *testing.T) {
 				Text: "hello world again",
 			},
 			repo: &testWordBubbleRepo{
-				err: errors.New("explosion"),
+				err: resp.NewErrorResp("boom", 0),
 			},
-			expectedErr: "explosion",
+			expectedErr: resp.NewErrorResp("boom", 0),
 		},
 	}
 	for tname, tcase := range tests {
 		t.Run(tname, func(t *testing.T) {
 			svc := NewWordBubblesService(util.TestLogger(), tcase.repo)
 			err := svc.AddNewWordBubble(tcase.userId, tcase.wordbubble)
-			if tcase.expectedErr == "" {
-				assert.Nil(t, err)
-			} else {
+			if tcase.expectedErr != nil {
 				assert.NotNil(t, err)
-				assert.Equal(t, tcase.expectedErr, err.Error())
+				assert.Equal(t, tcase.expectedErr.Error(), err.Error())
+			} else {
+				assert.Nil(t, err)
 			}
 		})
 	}

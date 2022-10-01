@@ -1,11 +1,10 @@
 package auth
 
 import (
-	"errors"
-	"fmt"
 	"strings"
 	"testing"
 
+	"github.com/bchadwic/wordbubble/resp"
 	"github.com/bchadwic/wordbubble/util"
 	"github.com/golang-jwt/jwt"
 	"github.com/stretchr/testify/assert"
@@ -49,7 +48,7 @@ func Test_GenerateRefreshToken(t *testing.T) {
 		"error from database": {
 			timer: util.Unix(0),
 			repo: &testAuthRepo{
-				err: errors.New("explosion"),
+				err: resp.NewErrorResp("boom", 0),
 			},
 			userId:   1254,
 			wantsErr: true,
@@ -79,7 +78,7 @@ func Test_ValidateRefreshToken(t *testing.T) {
 		timer        util.Timer
 		repo         AuthRepo
 		refreshToken *refreshToken
-		expectedErr  string
+		expectedErr  error
 		expectedEOL  bool
 	}{
 		"valid": {
@@ -92,12 +91,12 @@ func Test_ValidateRefreshToken(t *testing.T) {
 		"error from database": {
 			timer: util.Unix(0),
 			repo: &testAuthRepo{
-				err: fmt.Errorf("could not validate token"),
+				err: resp.ErrCouldNotValidateRefreshToken,
 			},
 			refreshToken: &refreshToken{
 				issuedAt: 2,
 			},
-			expectedErr: "could not validate token",
+			expectedErr: resp.ErrCouldNotValidateRefreshToken,
 		},
 		"error expired": {
 			timer: util.Unix(refreshTokenTimeLimit + 30),
@@ -105,7 +104,7 @@ func Test_ValidateRefreshToken(t *testing.T) {
 			refreshToken: &refreshToken{
 				issuedAt: 30,
 			},
-			expectedErr: "refresh token is expired, please login again",
+			expectedErr: resp.ErrRefreshTokenIsExpired,
 			expectedEOL: true,
 		},
 		"no error but close to EOL": {
@@ -138,9 +137,9 @@ func Test_ValidateRefreshToken(t *testing.T) {
 			jwt.TimeFunc = tcase.timer.Now
 			svc := NewAuthService(nil, tcase.repo, tcase.timer, "test signing key")
 			err := svc.ValidateRefreshToken(tcase.refreshToken)
-			if tcase.expectedErr != "" {
+			if tcase.expectedErr != nil {
 				assert.NotNil(t, err)
-				assert.Equal(t, tcase.expectedErr, err.Error())
+				assert.Equal(t, tcase.expectedErr.Error(), err.Error())
 			} else {
 				assert.NoError(t, err)
 			}

@@ -10,7 +10,7 @@ import (
 
 func (wb *app) Token(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		wb.errorResponse(resp.ErrInvalidMethod, w)
+		wb.errorResponse(resp.ErrInvalidHttpMethod, w)
 		return
 	}
 
@@ -18,7 +18,7 @@ func (wb *app) Token(w http.ResponseWriter, r *http.Request) {
 		TokenString string `json:"refresh_token"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
-		wb.errorResponse(resp.ErrInvalidMethod, w)
+		wb.errorResponse(resp.ErrInvalidHttpMethod, w)
 		return
 	}
 

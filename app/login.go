@@ -9,7 +9,7 @@ import (
 
 func (wb *app) Login(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		wb.errorResponse(resp.ErrInvalidMethod, w)
+		wb.errorResponse(resp.ErrInvalidHttpMethod, w)
 		return
 	}
 
