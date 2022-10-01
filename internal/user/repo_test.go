@@ -56,8 +56,21 @@ func Test_HappyPath(t *testing.T) {
 	assert.Nil(t, actual)
 }
 
-func Test_NotHappyPath(t *testing.T) {
+func Test_NotSoHappyPath(t *testing.T) {
 	repo := NewUserRepo(util.TestLogger(), NewTestDB())
+
+	// simulate a mapping error between database and application
+	repo.AddUser(&model.User{
+		Username: "ben",
+	})
+	_, err := repo.db.Exec(`ALTER TABLE users RENAME COLUMN username TO user_name;`)
+	if err != nil {
+		panic(err)
+	}
+	user, err := repo.RetrieveUserByUsername("ben")
+	assert.Nil(t, user)
+	assert.NotNil(t, err)
+	assert.ErrorIs(t, resp.ErrSQLMappingError, err)
 
 	repo.db.Close()
 	// an error occurs while adding a user

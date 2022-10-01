@@ -25,10 +25,9 @@ func (svc *userService) AddUser(user *model.User) error {
 	if err := svc.verifyUserUniqueness(user); err != nil {
 		return err
 	}
-	var passwordBytes = []byte(user.Password)
-	hashedPasswordBytes, err := bcrypt.GenerateFromPassword(passwordBytes, bcrypt.DefaultCost)
+	hashedPasswordBytes, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return resp.ErrCouldNotHashPassword
+		return resp.ErrCouldNotBeHashPassword
 	}
 	user.Password = string(hashedPasswordBytes)
 	id, err := svc.repo.AddUser(user)
@@ -56,23 +55,24 @@ func (svc *userService) RetrieveAuthenticatedUser(userStr, password string) (*mo
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
 		return nil, resp.ErrInvalidCredentials
 	}
-	return user, nil // successfully authenticated
+	user.Password = "" // no reason to pass the password around
+	return user, nil   // successfully authenticated
 }
 
 // verify the uniqueness of a user against the database
 // soon to be deprecated. A stored procedure should be made to
 // give a code on which uniqueness constraint has been violated
-func (svc *userService) verifyUserUniqueness(user *model.User) error {
+func (svc *userService) verifyUserUniqueness(uniqueUser *model.User) error {
 	var exists bool
-	user, err := svc.repo.RetrieveUserByUsername(user.Username)
-	if exists = user != nil; exists || !errors.Is(err, resp.ErrSQLMappingError) {
+	user, err := svc.repo.RetrieveUserByUsername(uniqueUser.Username)
+	if exists = user != nil; exists || !errors.Is(err, resp.ErrUnknownUser) {
 		if exists {
 			return resp.ErrUserWithUsernameAlreadyExists
 		} // if the error from repo is not a mapping error, we can't determine if the user exists
 		return resp.ErrCouldNotDetermineUserExistence
 	}
-	user, err = svc.repo.RetrieveUserByEmail(user.Email)
-	if exists = user != nil; exists || !errors.Is(err, resp.ErrSQLMappingError) {
+	user, err = svc.repo.RetrieveUserByEmail(uniqueUser.Email)
+	if exists = user != nil; exists || !errors.Is(err, resp.ErrUnknownUser) {
 		if exists {
 			return resp.ErrUserWithEmailAlreadyExists
 		}

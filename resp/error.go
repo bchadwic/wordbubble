@@ -24,7 +24,7 @@ var (
 	ErrCouldNotDetermineUserExistence = NewErrorResp("could not determine if user exists", http.StatusInternalServerError)
 	ErrUserWithUsernameAlreadyExists  = NewErrorResp("a user already exists with this username", http.StatusBadRequest)
 	ErrUserWithEmailAlreadyExists     = NewErrorResp("a user already exists with this email", http.StatusBadRequest)
-	ErrCouldNotHashPassword           = NewErrorResp("an error occurred storing password", http.StatusInternalServerError)
+	ErrCouldNotBeHashPassword         = NewErrorResp("an error occurred storing password", http.StatusInternalServerError)
 	ErrSQLMappingError                = NewErrorResp("an error occurred mapping data from the database", http.StatusInternalServerError)
 	ErrCouldNotAddUser                = NewErrorResp("an error occurred adding user to database", http.StatusInternalServerError)
 )

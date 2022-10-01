@@ -41,14 +41,14 @@ func Test_GenerateRefreshToken(t *testing.T) {
 	}{
 		"valid": {
 			timer: util.Unix(0),
-			repo: &TestAuthRepo{
+			repo: &testAuthRepo{
 				refreshToken: &refreshToken{string: "hi"},
 			},
 			userId: 96,
 		},
 		"error from database": {
 			timer: util.Unix(0),
-			repo: &TestAuthRepo{
+			repo: &testAuthRepo{
 				err: errors.New("explosion"),
 			},
 			userId:   1254,
@@ -84,14 +84,14 @@ func Test_ValidateRefreshToken(t *testing.T) {
 	}{
 		"valid": {
 			timer: util.Unix(0),
-			repo:  &TestAuthRepo{},
+			repo:  &testAuthRepo{},
 			refreshToken: &refreshToken{
 				issuedAt: 2,
 			},
 		},
 		"error from database": {
 			timer: util.Unix(0),
-			repo: &TestAuthRepo{
+			repo: &testAuthRepo{
 				err: fmt.Errorf("could not validate token"),
 			},
 			refreshToken: &refreshToken{
@@ -101,7 +101,7 @@ func Test_ValidateRefreshToken(t *testing.T) {
 		},
 		"error expired": {
 			timer: util.Unix(refreshTokenTimeLimit + 30),
-			repo:  &TestAuthRepo{},
+			repo:  &testAuthRepo{},
 			refreshToken: &refreshToken{
 				issuedAt: 30,
 			},
@@ -110,7 +110,7 @@ func Test_ValidateRefreshToken(t *testing.T) {
 		},
 		"no error but close to EOL": {
 			timer: util.Unix(refreshTokenTimeLimit + 30),
-			repo:  &TestAuthRepo{},
+			repo:  &testAuthRepo{},
 			refreshToken: &refreshToken{
 				issuedAt: refreshTokenTimeLimit*.1 + 30,
 			},
@@ -118,7 +118,7 @@ func Test_ValidateRefreshToken(t *testing.T) {
 		},
 		"valid almost but not at EOL": {
 			timer: util.Unix(refreshTokenTimeLimit + 30),
-			repo:  &TestAuthRepo{},
+			repo:  &testAuthRepo{},
 			refreshToken: &refreshToken{
 				issuedAt: refreshTokenTimeLimit*.2 + 30,
 			},
@@ -126,7 +126,7 @@ func Test_ValidateRefreshToken(t *testing.T) {
 		},
 		"valid almost expired": {
 			timer: util.Unix(refreshTokenTimeLimit + 30),
-			repo:  &TestAuthRepo{},
+			repo:  &testAuthRepo{},
 			refreshToken: &refreshToken{
 				issuedAt: 31,
 			},
@@ -159,19 +159,19 @@ func Test_TokenFuncs(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
-type TestAuthRepo struct {
+type testAuthRepo struct {
 	err          error
 	refreshToken *refreshToken
 }
 
-func (trepo *TestAuthRepo) StoreRefreshToken(token *refreshToken) error {
+func (trepo *testAuthRepo) StoreRefreshToken(token *refreshToken) error {
 	return trepo.err
 }
 
-func (trepo *TestAuthRepo) ValidateRefreshToken(token *refreshToken) error {
+func (trepo *testAuthRepo) ValidateRefreshToken(token *refreshToken) error {
 	return trepo.err
 }
 
-func (trepo *TestAuthRepo) GetLatestRefreshToken(userId int64) *refreshToken {
+func (trepo *testAuthRepo) GetLatestRefreshToken(userId int64) *refreshToken {
 	return trepo.refreshToken
 }

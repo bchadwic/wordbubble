@@ -19,6 +19,6 @@ type UserService interface {
 
 type UserRepo interface {
 	AddUser(user *model.User) (int64, error)
-	RetrieveUserByEmail(userStr string) (*model.User, error)
-	RetrieveUserByUsername(userStr string) (*model.User, error)
+	RetrieveUserByEmail(email string) (*model.User, error)
+	RetrieveUserByUsername(username string) (*model.User, error)
 }

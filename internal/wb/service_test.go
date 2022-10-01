@@ -23,14 +23,14 @@ func Test_AddNewWordBubble(t *testing.T) {
 			wordbubble: &model.WordBubble{
 				Text: "hello world",
 			},
-			repo: &TestWordBubbleRepo{},
+			repo: &testWordBubbleRepo{},
 		},
 		"invalid wordbubble text less than min bound": {
 			userId: 355,
 			wordbubble: &model.WordBubble{
 				Text: strings.Repeat(".", util.MinWordBubbleLength-1),
 			},
-			repo: &TestWordBubbleRepo{},
+			repo: &testWordBubbleRepo{},
 			expectedErr: fmt.Sprintf(
 				"wordbubble sent is invalid, must be inbetween %d-%d characters, received a length of %d",
 				util.MinWordBubbleLength, util.MaxWordBubbleLength, util.MinWordBubbleLength-1,
@@ -41,7 +41,7 @@ func Test_AddNewWordBubble(t *testing.T) {
 			wordbubble: &model.WordBubble{
 				Text: strings.Repeat(".", util.MaxWordBubbleLength+1),
 			},
-			repo: &TestWordBubbleRepo{},
+			repo: &testWordBubbleRepo{},
 			expectedErr: fmt.Sprintf(
 				"wordbubble sent is invalid, must be inbetween %d-%d characters, received a length of %d",
 				util.MinWordBubbleLength, util.MaxWordBubbleLength, util.MaxWordBubbleLength+1,
@@ -52,7 +52,7 @@ func Test_AddNewWordBubble(t *testing.T) {
 			wordbubble: &model.WordBubble{
 				Text: "hello world again",
 			},
-			repo: &TestWordBubbleRepo{
+			repo: &testWordBubbleRepo{
 				err: errors.New("explosion"),
 			},
 			expectedErr: "explosion",
@@ -80,14 +80,14 @@ func Test_RemoveAndReturnLatestWordBubbleForUserId(t *testing.T) {
 	}{
 		"wordbubble returned": {
 			userId: 3462,
-			repo: &TestWordBubbleRepo{
+			repo: &testWordBubbleRepo{
 				wordbubble: &model.WordBubble{},
 			},
 			expectedWordBubble: true,
 		},
 		"wordbubble not returned": {
 			userId: 3462,
-			repo:   &TestWordBubbleRepo{},
+			repo:   &testWordBubbleRepo{},
 		},
 	}
 	for tname, tcase := range tests {
@@ -103,15 +103,15 @@ func Test_RemoveAndReturnLatestWordBubbleForUserId(t *testing.T) {
 	}
 }
 
-type TestWordBubbleRepo struct {
+type testWordBubbleRepo struct {
 	err        error
 	wordbubble *model.WordBubble
 }
 
-func (trepo *TestWordBubbleRepo) AddNewWordBubble(userId int64, wb *model.WordBubble) error {
+func (trepo *testWordBubbleRepo) AddNewWordBubble(userId int64, wb *model.WordBubble) error {
 	return trepo.err
 }
 
-func (trepo *TestWordBubbleRepo) RemoveAndReturnLatestWordBubbleForUserId(userId int64) *model.WordBubble {
+func (trepo *testWordBubbleRepo) RemoveAndReturnLatestWordBubbleForUserId(userId int64) *model.WordBubble {
 	return trepo.wordbubble
 }
