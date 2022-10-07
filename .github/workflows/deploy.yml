@@ -1,0 +1,46 @@
+name: Deploy
+
+on:
+  push:
+    branches: [ "main" ]
+
+env:
+  PROJECT_ID: '${{ secrets.GCP_PROJECT_ID }}'
+  SERVICE: 'wordbubble'
+  REGION: 'us-central1'
+  REGISTRY: '${{ secrets.GCP_ARTIFACT_REGISTRY }}'
+
+jobs:
+  deploy:
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Login to Google Cloud
+        id: auth
+        uses: 'google-github-actions/auth@v0'
+        with:
+          credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
+          
+      - name: Setup artifact registry
+        run: |
+          gcloud config set account '${{ secrets.GCP_GH_SERVICE_ACCOUNT }}'
+          gcloud auth print-access-token | docker login -u oauth2accesstoken --password-stdin https://us-central1-docker.pkg.dev
+
+      - name: Build and Push Container
+        run: |
+          docker build -t "${{ env.REGISTRY }}/${{ env.SERVICE }}:${{ github.sha }}" ./
+          docker push "${{ env.REGISTRY }}/${{ env.SERVICE }}:${{ github.sha }}"
+
+      - name: Deploy to Cloud Run
+        id: deploy
+        uses: google-github-actions/deploy-cloudrun@v0
+        with:
+          service: ${{ env.SERVICE }}
+          region: ${{ env.REGION }}
+          image: "${{ env.REGISTRY }}/${{ env.SERVICE }}:${{ github.sha }}"
