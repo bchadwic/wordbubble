@@ -17,9 +17,12 @@ type Config interface {
 	Timer() util.Timer
 }
 
-type config struct{}
+type config struct {
+	db *sql.DB
+}
 
 type testConfig struct {
+	db    *sql.DB
 	timer util.Timer
 }
 
@@ -39,47 +42,23 @@ func NewConfig() *config {
 		log.Error("signing key is not set")
 		return nil
 	}
-	if err := cfg.DB().Ping(); err != nil {
+	db, err := sql.Open("mysql", os.Getenv("DSN"))
+	if err != nil {
+		log.Error("db creation failed: " + err.Error())
+		return nil
+	}
+	if err := db.Ping(); err != nil {
 		log.Error("db ping failed: " + err.Error())
 		return nil
 	}
+	cfg.db = db
 	return &cfg
 }
 
 // TestConfig is used for unit testing only, do not use for any other scenario
 func TestConfig() *testConfig {
 	util.SigningKey = func() []byte { return []byte("test key") }
-	return &testConfig{}
-}
-
-func (cfg *config) NewLogger(namespace string) util.Logger {
-	return util.NewLogger(namespace, os.Getenv("WB_LOG_LEVEL"))
-}
-
-func (cfg *config) DB() *sql.DB {
-	db, err := sql.Open("mysql", os.Getenv("DSN"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	return db
-}
-
-func (cfg *config) Port() string {
-	if p := os.Getenv("WB_PORT"); p != "" {
-		return p
-	}
-	return ":8080"
-}
-
-func (cfg *config) Timer() util.Timer {
-	return util.NewTimer()
-}
-
-func (cfg *testConfig) NewLogger(namespace string) util.Logger {
-	return util.TestLogger()
-}
-
-func (cfg *testConfig) DB() *sql.DB {
+	var cfg testConfig
 	db, err := sql.Open("sqlite3", ":memory:")
 	if err != nil {
 		log.Fatal(err)
@@ -109,7 +88,35 @@ func (cfg *testConfig) DB() *sql.DB {
 	if err != nil {
 		log.Fatal(err)
 	}
-	return db
+	cfg.db = db
+	return &cfg
+}
+
+func (cfg *config) NewLogger(namespace string) util.Logger {
+	return util.NewLogger(namespace, os.Getenv("WB_LOG_LEVEL"))
+}
+
+func (cfg *config) DB() *sql.DB {
+	return cfg.db
+}
+
+func (cfg *config) Port() string {
+	if p := os.Getenv("WB_PORT"); p != "" {
+		return p
+	}
+	return ":8080"
+}
+
+func (cfg *config) Timer() util.Timer {
+	return util.NewTimer()
+}
+
+func (cfg *testConfig) NewLogger(namespace string) util.Logger {
+	return util.TestLogger()
+}
+
+func (cfg *testConfig) DB() *sql.DB {
+	return cfg.db
 }
 
 func (cfg *testConfig) Port() string {

@@ -7,7 +7,6 @@ import (
 	"github.com/bchadwic/wordbubble/model"
 	"github.com/bchadwic/wordbubble/resp"
 	"github.com/bchadwic/wordbubble/util"
-	_ "github.com/mattn/go-sqlite3"
 )
 
 type wordBubbleRepo struct {

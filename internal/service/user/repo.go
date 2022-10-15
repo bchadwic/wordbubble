@@ -8,7 +8,6 @@ import (
 	"github.com/bchadwic/wordbubble/model"
 	"github.com/bchadwic/wordbubble/resp"
 	"github.com/bchadwic/wordbubble/util"
-	_ "github.com/mattn/go-sqlite3"
 )
 
 type userRepo struct {
@@ -28,7 +27,7 @@ func (repo *userRepo) addUser(user *model.User) (int64, error) {
 	if err != nil {
 		return 0, resp.ErrCouldNotAddUser
 	}
-	return res.LastInsertId() // sqlite3 supports last id, error is nil
+	return res.LastInsertId()
 }
 
 func (repo *userRepo) retrieveUserByEmail(email string) (*model.User, error) {

@@ -6,7 +6,6 @@ import (
 	cfg "github.com/bchadwic/wordbubble/internal/config"
 	"github.com/bchadwic/wordbubble/resp"
 	"github.com/bchadwic/wordbubble/util"
-	_ "github.com/mattn/go-sqlite3"
 )
 
 type authRepo struct {
