@@ -3,6 +3,7 @@ package auth
 import (
 	"database/sql"
 
+	cfg "github.com/bchadwic/wordbubble/internal/config"
 	"github.com/bchadwic/wordbubble/resp"
 	"github.com/bchadwic/wordbubble/util"
 	_ "github.com/mattn/go-sqlite3"
@@ -13,18 +14,10 @@ type authRepo struct {
 	log util.Logger
 }
 
-func NewAuthRepo(logger util.Logger, db *sql.DB) *authRepo {
-	db.Exec(`
-		CREATE TABLE IF NOT EXISTS tokens (
-			user_id INTEGER NOT NULL,  
-			refresh_token TEXT NOT NULL,
-			issued_at INTEGER NOT NULL,
-			FOREIGN KEY(user_id) REFERENCES users(user_id)
-		);
-	`)
+func NewAuthRepo(config cfg.Config) *authRepo {
 	return &authRepo{
-		log: logger,
-		db:  db,
+		log: config.NewLogger("auth_repo"),
+		db:  config.DB(),
 	}
 }
 

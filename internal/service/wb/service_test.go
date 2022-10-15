@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	cfg "github.com/bchadwic/wordbubble/internal/config"
 	"github.com/bchadwic/wordbubble/model"
 	"github.com/bchadwic/wordbubble/resp"
 	"github.com/bchadwic/wordbubble/util"
@@ -61,7 +62,7 @@ func Test_AddNewWordBubble(t *testing.T) {
 	}
 	for tname, tcase := range tests {
 		t.Run(tname, func(t *testing.T) {
-			svc := NewWordBubblesService(util.TestLogger(), tcase.repo)
+			svc := NewWordBubblesService(cfg.TestConfig(), tcase.repo)
 			err := svc.AddNewWordBubble(tcase.userId, tcase.wordbubble)
 			if tcase.expectedErr != nil {
 				assert.NotNil(t, err)
@@ -93,7 +94,7 @@ func Test_RemoveAndReturnLatestWordBubbleForUserId(t *testing.T) {
 	}
 	for tname, tcase := range tests {
 		t.Run(tname, func(t *testing.T) {
-			svc := NewWordBubblesService(util.TestLogger(), tcase.repo)
+			svc := NewWordBubblesService(cfg.TestConfig(), tcase.repo)
 			wordbubble := svc.RemoveAndReturnLatestWordBubbleForUserId(tcase.userId)
 			if tcase.expectedWordBubble {
 				assert.NotNil(t, wordbubble)

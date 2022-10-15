@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/bchadwic/wordbubble/internal/auth"
+	"github.com/bchadwic/wordbubble/internal/service/auth"
 	"github.com/bchadwic/wordbubble/resp"
 )
 

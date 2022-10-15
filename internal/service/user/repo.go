@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 
+	cfg "github.com/bchadwic/wordbubble/internal/config"
 	"github.com/bchadwic/wordbubble/model"
 	"github.com/bchadwic/wordbubble/resp"
 	"github.com/bchadwic/wordbubble/util"
@@ -15,20 +16,10 @@ type userRepo struct {
 	log util.Logger
 }
 
-func NewUserRepo(logger util.Logger, db *sql.DB) *userRepo {
-	db.Exec(`
-		CREATE TABLE IF NOT EXISTS users (
-			user_id INTEGER PRIMARY KEY AUTOINCREMENT,
-			created_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-			updated_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-			username TEXT UNIQUE NOT NULL,
-			email TEXT UNIQUE NOT NULL,
-			password TEXT NOT NULL
-		);
-	`)
+func NewUserRepo(cfg cfg.Config) *userRepo {
 	return &userRepo{
-		db:  db,
-		log: logger,
+		log: cfg.NewLogger("users_repo"),
+		db:  cfg.DB(),
 	}
 }
 

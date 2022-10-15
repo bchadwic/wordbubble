@@ -1,25 +1,16 @@
 package user
 
 import (
-	"database/sql"
 	"testing"
 
+	cfg "github.com/bchadwic/wordbubble/internal/config"
 	"github.com/bchadwic/wordbubble/model"
 	"github.com/bchadwic/wordbubble/resp"
-	"github.com/bchadwic/wordbubble/util"
 	"github.com/stretchr/testify/assert"
 )
 
-func NewTestDB() *sql.DB {
-	db, err := sql.Open("sqlite3", ":memory:")
-	if err != nil {
-		panic(err)
-	}
-	return db
-}
-
 func Test_HappyPath(t *testing.T) {
-	repo := NewUserRepo(util.TestLogger(), NewTestDB())
+	repo := NewUserRepo(cfg.TestConfig())
 
 	expected := &model.User{
 		Id:       1,
@@ -57,7 +48,7 @@ func Test_HappyPath(t *testing.T) {
 }
 
 func Test_NotSoHappyPath(t *testing.T) {
-	repo := NewUserRepo(util.TestLogger(), NewTestDB())
+	repo := NewUserRepo(cfg.TestConfig())
 
 	// simulate a mapping error between database and application
 	repo.addUser(&model.User{

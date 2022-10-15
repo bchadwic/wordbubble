@@ -3,9 +3,9 @@ package user
 import (
 	"testing"
 
+	cfg "github.com/bchadwic/wordbubble/internal/config"
 	"github.com/bchadwic/wordbubble/model"
 	"github.com/bchadwic/wordbubble/resp"
-	"github.com/bchadwic/wordbubble/util"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -68,7 +68,7 @@ func Test_AddUser(t *testing.T) {
 	}
 	for tname, tcase := range tests {
 		t.Run(tname, func(t *testing.T) {
-			svc := NewUserService(util.TestLogger(), tcase.repo)
+			svc := NewUserService(cfg.TestConfig(), tcase.repo)
 			beforeEncryptedPassword := tcase.user.Password
 			err := svc.AddUser(tcase.user)
 
@@ -120,7 +120,7 @@ func Test_RetrieveUnauthenticatedUser(t *testing.T) {
 	}
 	for tname, tcase := range tests {
 		t.Run(tname, func(t *testing.T) {
-			svc := NewUserService(util.TestLogger(), tcase.repo)
+			svc := NewUserService(cfg.TestConfig(), tcase.repo)
 			user, err := svc.RetrieveUnauthenticatedUser(tcase.userStr)
 			if tcase.expectedErr != nil {
 				assert.NotNil(t, err)
@@ -189,7 +189,7 @@ func Test_RetrieveAuthenticatedUser(t *testing.T) {
 	}
 	for tname, tcase := range tests {
 		t.Run(tname, func(t *testing.T) {
-			svc := NewUserService(util.TestLogger(), tcase.repo)
+			svc := NewUserService(cfg.TestConfig(), tcase.repo)
 			user, err := svc.RetrieveAuthenticatedUser(tcase.userStr, tcase.password)
 			if tcase.expectedErr != nil {
 				assert.NotNil(t, err)

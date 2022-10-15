@@ -3,9 +3,10 @@ package app
 import (
 	"net/http"
 
-	"github.com/bchadwic/wordbubble/internal/auth"
-	"github.com/bchadwic/wordbubble/internal/user"
-	"github.com/bchadwic/wordbubble/internal/wb"
+	cfg "github.com/bchadwic/wordbubble/internal/config"
+	"github.com/bchadwic/wordbubble/internal/service/auth"
+	"github.com/bchadwic/wordbubble/internal/service/user"
+	"github.com/bchadwic/wordbubble/internal/service/wb"
 	"github.com/bchadwic/wordbubble/resp"
 	"github.com/bchadwic/wordbubble/util"
 )
@@ -18,13 +19,13 @@ type app struct {
 	timer       util.Timer
 }
 
-func NewApp(authService auth.AuthService, userService user.UserService, wbService wb.WordBubbleService, log util.Logger, timer util.Timer) *app {
+func NewApp(cfg cfg.Config, authService auth.AuthService, userService user.UserService, wbService wb.WordBubbleService) *app {
 	return &app{
 		auth:        authService,
 		users:       userService,
 		wordbubbles: wbService,
-		log:         log,
-		timer:       timer,
+		log:         cfg.NewLogger("app"),
+		timer:       cfg.Timer(),
 	}
 }
 

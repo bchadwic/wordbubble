@@ -1,6 +1,7 @@
 package wb
 
 import (
+	cfg "github.com/bchadwic/wordbubble/internal/config"
 	"github.com/bchadwic/wordbubble/model"
 	"github.com/bchadwic/wordbubble/util"
 )
@@ -10,10 +11,10 @@ type wordBubbleService struct {
 	log  util.Logger
 }
 
-func NewWordBubblesService(log util.Logger, repo WordBubbleRepo) *wordBubbleService {
+func NewWordBubblesService(cfg cfg.Config, repo WordBubbleRepo) *wordBubbleService {
 	return &wordBubbleService{
+		log:  cfg.NewLogger("wordbubbles"),
 		repo: repo,
-		log:  log,
 	}
 }
 

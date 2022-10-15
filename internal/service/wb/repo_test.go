@@ -1,44 +1,20 @@
 package wb
 
 import (
-	"database/sql"
 	"fmt"
 	"testing"
 
+	cfg "github.com/bchadwic/wordbubble/internal/config"
 	"github.com/bchadwic/wordbubble/model"
 	"github.com/bchadwic/wordbubble/resp"
-	"github.com/bchadwic/wordbubble/util"
 	"github.com/stretchr/testify/assert"
 )
 
-func NewTestDB() *sql.DB {
-	db, err := sql.Open("sqlite3", ":memory:")
-	if err != nil {
-		panic(err)
-	}
-	db.Exec(`
-		CREATE TABLE IF NOT EXISTS users (
-			user_id INTEGER PRIMARY KEY AUTOINCREMENT,
-			created_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-			updated_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-			username TEXT UNIQUE NOT NULL,
-			email TEXT UNIQUE NOT NULL,
-			password TEXT NOT NULL
-		);
-	`)
-	return db
-}
-
 func Test_HappyPath(t *testing.T) {
-	repo := NewWordBubbleRepo(util.TestLogger(), NewTestDB())
-
-	// A non existent user adds a wordbubble
-	err := repo.addNewWordBubble(1, &model.WordBubble{})
-	assert.NotNil(t, err)
-	assert.Equal(t, "FOREIGN KEY constraint failed", err.Error())
+	repo := NewWordBubbleRepo(cfg.TestConfig())
 
 	// A user gets created, now we can add a wordbubble
-	_, err = repo.db.Exec(`INSERT INTO users (username, email, password) VALUES ('bchadwick', 'benchadwick87@gmail.com', 'test-password')`)
+	_, err := repo.db.Exec(`INSERT INTO users (username, email, password) VALUES ('bchadwick', 'benchadwick87@gmail.com', 'test-password')`)
 	if err != nil {
 		panic(err)
 	}

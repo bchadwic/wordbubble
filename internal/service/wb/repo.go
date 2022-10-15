@@ -3,6 +3,7 @@ package wb
 import (
 	"database/sql"
 
+	cfg "github.com/bchadwic/wordbubble/internal/config"
 	"github.com/bchadwic/wordbubble/model"
 	"github.com/bchadwic/wordbubble/resp"
 	"github.com/bchadwic/wordbubble/util"
@@ -14,20 +15,10 @@ type wordBubbleRepo struct {
 	log util.Logger
 }
 
-func NewWordBubbleRepo(logger util.Logger, db *sql.DB) *wordBubbleRepo {
-	db.Exec(`
-		PRAGMA foreign_keys = ON;
-		CREATE TABLE IF NOT EXISTS wordbubbles (
-			wordbubble_id INTEGER PRIMARY KEY AUTOINCREMENT,
-			user_id INTEGER NOT NULL,  
-			created_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-			text TEXT NOT NULL,
-			FOREIGN KEY(user_id) REFERENCES users(user_id)
-		);
-	`)
+func NewWordBubbleRepo(config cfg.Config) *wordBubbleRepo {
 	return &wordBubbleRepo{
-		log: logger,
-		db:  db,
+		log: config.NewLogger("wb_repo"),
+		db:  config.DB(),
 	}
 }
 

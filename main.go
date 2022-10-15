@@ -1,48 +1,40 @@
 package main
 
 import (
-	"database/sql"
 	"errors"
 	"net/http"
 	"os"
 
 	"github.com/bchadwic/wordbubble/app"
-	"github.com/bchadwic/wordbubble/internal/auth"
-	"github.com/bchadwic/wordbubble/internal/user"
-	"github.com/bchadwic/wordbubble/internal/wb"
-	"github.com/bchadwic/wordbubble/util"
+	cfg "github.com/bchadwic/wordbubble/internal/config"
+	"github.com/bchadwic/wordbubble/internal/service/auth"
+	"github.com/bchadwic/wordbubble/internal/service/user"
+	"github.com/bchadwic/wordbubble/internal/service/wb"
 )
 
-var newLogger = func(namespace string) util.Logger {
-	return util.NewLogger(namespace, os.Getenv("WB_LOG_LEVEL"))
+func main() {
+	cfg := cfg.NewConfig()
+	if cfg == nil || run(cfg) != nil {
+		os.Exit(1)
+	}
 }
 
-var port = func() string {
-	if p := os.Getenv("WB_PORT"); p != "" {
-		return p
-	}
-	return ":8080"
-}()
+func run(cfg cfg.Config) error {
+	logger := cfg.NewLogger("run")
 
-func main() {
-	db, err := sql.Open("sqlite3", "./wordbubble.db")
-	if err != nil {
-		panic(err)
-	}
-	logger := newLogger("main")
-	timer := util.NewTimer()
-	wbRepo := wb.NewWordBubbleRepo(newLogger("wb_repo"), db)
-	usersRepo := user.NewUserRepo(newLogger("users_repo"), db)
-	authRepo := auth.NewAuthRepo(newLogger("auth_repo"), db)
+	logger.Info("initializing repos and services")
+	authRepo := auth.NewAuthRepo(cfg)
+	usersRepo := user.NewUserRepo(cfg)
+	wbRepo := wb.NewWordBubbleRepo(cfg)
 
-	app := app.NewApp(
-		auth.NewAuthService(newLogger("auth"), authRepo, timer, os.Getenv("WB_SIGNING_KEY")),
-		user.NewUserService(newLogger("users"), usersRepo),
-		wb.NewWordBubblesService(newLogger("wordbubbles"), wbRepo),
-		newLogger("app"),
-		timer,
-	)
+	authService := auth.NewAuthService(cfg, authRepo)
+	userService := user.NewUserService(cfg, usersRepo)
+	wbService := wb.NewWordBubblesService(cfg, wbRepo)
 
+	logger.Info("creating app")
+	app := app.NewApp(cfg, authService, userService, wbService)
+
+	logger.Info("attaching routes to app")
 	http.HandleFunc("/signup", app.Signup)
 	http.HandleFunc("/login", app.Login)
 	http.HandleFunc("/token", app.Token)
@@ -52,12 +44,13 @@ func main() {
 	logger.Info("starting refresh token cleaner with an interval of: %gs", auth.RefreshTokenCleanerRate.Seconds())
 	app.BackgroundCleaner(authRepo)
 
-	logger.Info("starting server on port %s", port)
-	err = http.ListenAndServe(port, nil)
+	logger.Info("starting server on port %s", cfg.Port())
+	err := http.ListenAndServe(cfg.Port(), nil)
 	if errors.Is(err, http.ErrServerClosed) {
 		logger.Info("server closed")
+		return nil
 	} else if err != nil {
 		logger.Error("could not start server %s", err)
-		os.Exit(1)
 	}
+	return err
 }
