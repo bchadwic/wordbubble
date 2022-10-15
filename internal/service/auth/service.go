@@ -3,15 +3,15 @@ package auth
 import (
 	"time"
 
+	cfg "github.com/bchadwic/wordbubble/internal/config"
 	"github.com/bchadwic/wordbubble/resp"
 	"github.com/bchadwic/wordbubble/util"
 )
 
 type authService struct {
-	repo       AuthRepo
-	log        util.Logger
-	timer      util.Timer
-	signingKey string
+	log   util.Logger
+	timer util.Timer
+	repo  AuthRepo
 }
 
 type refreshToken struct {
@@ -21,15 +21,11 @@ type refreshToken struct {
 	nearEOL  bool
 }
 
-func NewAuthService(log util.Logger, repo AuthRepo, timer util.Timer, signingKey string) *authService {
-	util.SigningKey = func() []byte {
-		return []byte(signingKey)
-	}
+func NewAuthService(cfg cfg.Config, repo AuthRepo) *authService {
 	return &authService{
-		log:        log,
-		repo:       repo,
-		timer:      timer,
-		signingKey: signingKey,
+		log:   cfg.NewLogger("auth"),
+		timer: cfg.Timer(),
+		repo:  repo,
 	}
 }
 

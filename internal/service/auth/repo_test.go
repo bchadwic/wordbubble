@@ -1,24 +1,15 @@
 package auth
 
 import (
-	"database/sql"
 	"testing"
 
+	cfg "github.com/bchadwic/wordbubble/internal/config"
 	"github.com/bchadwic/wordbubble/resp"
-	"github.com/bchadwic/wordbubble/util"
 	"github.com/stretchr/testify/assert"
 )
 
-func NewTestDB() *sql.DB {
-	db, err := sql.Open("sqlite3", ":memory:")
-	if err != nil {
-		panic(err)
-	}
-	return db
-}
-
 func Test_HappyPath(t *testing.T) {
-	repo := NewAuthRepo(util.TestLogger(), NewTestDB())
+	repo := NewAuthRepo(cfg.TestConfig())
 	tokenStr, userId, issuedAt := "im.a.token", int64(56), int64(234)
 
 	// A user signs up or logins in. Refresh token is saved after being generated
@@ -63,7 +54,7 @@ func Test_HappyPath(t *testing.T) {
 }
 
 func Test_NotSoHappyPath(t *testing.T) {
-	repo := NewAuthRepo(util.TestLogger(), NewTestDB())
+	repo := NewAuthRepo(cfg.TestConfig())
 
 	// db closed
 	repo.db.Close()

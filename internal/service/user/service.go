@@ -3,6 +3,7 @@ package user
 import (
 	"errors"
 
+	cfg "github.com/bchadwic/wordbubble/internal/config"
 	"github.com/bchadwic/wordbubble/model"
 	"github.com/bchadwic/wordbubble/resp"
 	"github.com/bchadwic/wordbubble/util"
@@ -14,10 +15,10 @@ type userService struct {
 	log  util.Logger
 }
 
-func NewUserService(logger util.Logger, repo UserRepo) *userService {
+func NewUserService(cfg cfg.Config, repo UserRepo) *userService {
 	return &userService{
+		log:  cfg.NewLogger("users"),
 		repo: repo,
-		log:  logger,
 	}
 }
 

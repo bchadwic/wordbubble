@@ -4,10 +4,10 @@ import (
 	"database/sql"
 	"errors"
 
+	cfg "github.com/bchadwic/wordbubble/internal/config"
 	"github.com/bchadwic/wordbubble/model"
 	"github.com/bchadwic/wordbubble/resp"
 	"github.com/bchadwic/wordbubble/util"
-	_ "github.com/mattn/go-sqlite3"
 )
 
 type userRepo struct {
@@ -15,20 +15,10 @@ type userRepo struct {
 	log util.Logger
 }
 
-func NewUserRepo(logger util.Logger, db *sql.DB) *userRepo {
-	db.Exec(`
-		CREATE TABLE IF NOT EXISTS users (
-			user_id INTEGER PRIMARY KEY AUTOINCREMENT,
-			created_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-			updated_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-			username TEXT UNIQUE NOT NULL,
-			email TEXT UNIQUE NOT NULL,
-			password TEXT NOT NULL
-		);
-	`)
+func NewUserRepo(cfg cfg.Config) *userRepo {
 	return &userRepo{
-		db:  db,
-		log: logger,
+		log: cfg.NewLogger("users_repo"),
+		db:  cfg.DB(),
 	}
 }
 
@@ -37,7 +27,7 @@ func (repo *userRepo) addUser(user *model.User) (int64, error) {
 	if err != nil {
 		return 0, resp.ErrCouldNotAddUser
 	}
-	return res.LastInsertId() // sqlite3 supports last id, error is nil
+	return res.LastInsertId()
 }
 
 func (repo *userRepo) retrieveUserByEmail(email string) (*model.User, error) {

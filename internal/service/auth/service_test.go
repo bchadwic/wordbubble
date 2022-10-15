@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	cfg "github.com/bchadwic/wordbubble/internal/config"
 	"github.com/bchadwic/wordbubble/resp"
 	"github.com/bchadwic/wordbubble/util"
 	"github.com/golang-jwt/jwt"
@@ -23,7 +24,10 @@ func Test_GenerateAccessToken(t *testing.T) {
 	for tname, tcase := range tests {
 		t.Run(tname, func(t *testing.T) {
 			jwt.TimeFunc = tcase.timer.Now
-			svc := NewAuthService(util.TestLogger(), nil, tcase.timer, "test signing key")
+			util.SigningKey = func() []byte { return []byte("test") }
+			cfg := cfg.TestConfig()
+			cfg.SetTimer(tcase.timer)
+			svc := NewAuthService(cfg, nil)
 			tokenStr := svc.GenerateAccessToken(tcase.userId)
 			parts := strings.Split(tokenStr, ".")
 			assert.Equal(t, 3, len(parts))
@@ -57,7 +61,10 @@ func Test_GenerateRefreshToken(t *testing.T) {
 	for tname, tcase := range tests {
 		t.Run(tname, func(t *testing.T) {
 			jwt.TimeFunc = tcase.timer.Now
-			svc := NewAuthService(util.TestLogger(), tcase.repo, tcase.timer, "test signing key")
+			util.SigningKey = func() []byte { return []byte("test") }
+			cfg := cfg.TestConfig()
+			cfg.SetTimer(tcase.timer)
+			svc := NewAuthService(cfg, tcase.repo)
 			tokenStr, err := svc.GenerateRefreshToken(tcase.userId)
 			if tcase.wantsErr {
 				assert.Error(t, err)
@@ -135,7 +142,10 @@ func Test_ValidateRefreshToken(t *testing.T) {
 	for tname, tcase := range tests {
 		t.Run(tname, func(t *testing.T) {
 			jwt.TimeFunc = tcase.timer.Now
-			svc := NewAuthService(nil, tcase.repo, tcase.timer, "test signing key")
+			util.SigningKey = func() []byte { return []byte("test") }
+			cfg := cfg.TestConfig()
+			cfg.SetTimer(tcase.timer)
+			svc := NewAuthService(cfg, tcase.repo)
 			err := svc.ValidateRefreshToken(tcase.refreshToken)
 			if tcase.expectedErr != nil {
 				assert.NotNil(t, err)
