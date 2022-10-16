@@ -1,0 +1,177 @@
+basePath: /api/v1
+definitions:
+  model.LoginUser:
+    description: LoginUser is the body sent to the /login operation
+    properties:
+      password:
+        example: SomePassword_123
+        type: string
+      user:
+        example: ben
+        type: string
+    type: object
+  model.PopUser:
+    description: PopUser is the param sent to the /pop operation
+    properties:
+      user:
+        example: ben
+        type: string
+    type: object
+  model.WordBubble:
+    properties:
+      text:
+        example: Hello world, this is just an example of a wordbubble
+        type: string
+    type: object
+  resp.AuthenticatedResponse:
+    properties:
+      access_token:
+        example: xxx.yyy.zzz
+        type: string
+      refresh_token:
+        example: xxx.yyy.zzz
+        type: string
+    type: object
+  resp.StatusBadRequest:
+    properties:
+      code:
+        example: 400
+        type: integer
+      message:
+        example: could not determine if user passed is a username or an email
+        type: string
+    type: object
+  resp.StatusInternalServerError:
+    properties:
+      code:
+        example: 500
+        type: integer
+      message:
+        example: an error occurred mapping data from the database
+        type: string
+    type: object
+  resp.StatusMethodNotAllowed:
+    properties:
+      code:
+        example: 405
+        type: integer
+      message:
+        example: invalid http method
+        type: string
+    type: object
+  resp.StatusNoContent:
+    properties:
+      code:
+        example: 201
+        type: integer
+      message:
+        example: could not find a wordbubble for this user
+        type: string
+    type: object
+  resp.StatusUnauthorized:
+    properties:
+      code:
+        example: 401
+        type: integer
+      message:
+        example: could not validate the refresh token, please login again
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: This is a sample server celler server.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Swagger Example API
+  version: "1.0"
+paths:
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Login to api.wordbubble.io using the user credentials
+      parameters:
+      - description: Credentials used to authenticate a user
+        in: body
+        name: AuthenticatedUser
+        required: true
+        schema:
+          $ref: '#/definitions/model.LoginUser'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Valid access and refresh tokens for user
+          schema:
+            $ref: '#/definitions/resp.AuthenticatedResponse'
+        "400":
+          description: resp.ErrParseUser, resp.ErrUnknownUser, resp.ErrCouldNotDetermineUserType
+          schema:
+            $ref: '#/definitions/resp.StatusBadRequest'
+        "401":
+          description: resp.ErrInvalidCredentials
+          schema:
+            $ref: '#/definitions/resp.StatusUnauthorized'
+        "405":
+          description: resp.ErrInvalidHttpMethod
+          schema:
+            $ref: '#/definitions/resp.StatusMethodNotAllowed'
+        "500":
+          description: resp.ErrSQLMappingError, resp.ErrCouldNotStoreRefreshToken
+          schema:
+            $ref: '#/definitions/resp.StatusInternalServerError'
+      summary: Login to api.wordbubble.io
+      tags:
+      - authentication
+  /pop:
+    delete:
+      consumes:
+      - application/json
+      description: Pop removes and returns a wordbubble for a user
+      parameters:
+      - description: Username or email that the wordbubble will come from
+        in: body
+        name: UnauthenticatedUser
+        required: true
+        schema:
+          $ref: '#/definitions/model.PopUser'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Latest WordBubble for user passed
+          schema:
+            $ref: '#/definitions/model.WordBubble'
+        "201":
+          description: resp.ErrNoWordBubble
+          schema:
+            $ref: '#/definitions/resp.StatusNoContent'
+        "400":
+          description: resp.ErrParseUser, resp.ErrUnknownUser, resp.ErrCouldNotDetermineUserType
+          schema:
+            $ref: '#/definitions/resp.StatusBadRequest'
+        "401":
+          description: resp.ErrInvalidCredentials
+          schema:
+            $ref: '#/definitions/resp.StatusUnauthorized'
+        "405":
+          description: resp.ErrInvalidHttpMethod
+          schema:
+            $ref: '#/definitions/resp.StatusMethodNotAllowed'
+        "500":
+          description: resp.ErrSQLMappingError, resp.ErrCouldNotStoreRefreshToken
+          schema:
+            $ref: '#/definitions/resp.StatusInternalServerError'
+      summary: Pop a wordbubble
+      tags:
+      - wordbubble
+securityDefinitions:
+  BasicAuth:
+    type: basic
+swagger: "2.0"

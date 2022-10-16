@@ -19,6 +19,22 @@ func main() {
 	}
 }
 
+// @title          Swagger Example API
+// @version        1.0
+// @description    This is a sample server celler server.
+// @termsOfService http://swagger.io/terms/
+
+// @contact.name  API Support
+// @contact.url   http://www.swagger.io/support
+// @contact.email support@swagger.io
+
+// @license.name Apache 2.0
+// @license.url  http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @host     localhost:8080
+// @BasePath /api/v1
+
+// @securityDefinitions.basic BasicAuth
 func run(cfg cfg.Config) error {
 	logger := cfg.NewLogger("run")
 
@@ -39,7 +55,7 @@ func run(cfg cfg.Config) error {
 	http.HandleFunc("/login", app.Login)
 	http.HandleFunc("/token", app.Token)
 	http.HandleFunc("/push", app.Push)
-	http.HandleFunc("/pop", app.Pop)
+	http.HandleFunc("/pop/", app.Pop)
 
 	logger.Info("starting refresh token cleaner with an interval of: %gs", auth.RefreshTokenCleanerRate.Seconds())
 	app.BackgroundCleaner(authRepo)

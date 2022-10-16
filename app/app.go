@@ -40,12 +40,33 @@ func (wb *app) BackgroundCleaner(authCleaner auth.AuthCleaner) {
 }
 
 func (wb *app) errorResponse(err error, w http.ResponseWriter) {
-	wb.log.Error("an error occurred %s", err.Error())
 	switch t := err.(type) {
-	case *resp.ErrorResponse:
+	case *resp.StatusNoContent:
+		wb.log.Warn("%d - %s", t.Code, t.Error())
 		w.WriteHeader(t.Code)
-		w.Write(t.Message)
+		w.Write([]byte(t.Message))
+	case *resp.StatusBadRequest:
+		wb.log.Warn("%d - %s", t.Code, t.Error())
+		w.WriteHeader(t.Code)
+		w.Write([]byte(t.Message))
+	case *resp.StatusUnauthorized:
+		wb.log.Warn("%d - %s", t.Code, t.Error())
+		w.WriteHeader(t.Code)
+		w.Write([]byte(t.Message))
+	case *resp.StatusMethodNotAllowed:
+		wb.log.Warn("%d - %s", t.Code, t.Error())
+		w.WriteHeader(t.Code)
+		w.Write([]byte(t.Message))
+	case *resp.StatusConflict:
+		wb.log.Warn("%d - %s", t.Code, t.Error())
+		w.WriteHeader(t.Code)
+		w.Write([]byte(t.Message))
+	case *resp.StatusInternalServerError:
+		wb.log.Warn("%d - %s", t.Code, t.Error())
+		w.WriteHeader(t.Code)
+		w.Write([]byte(t.Message))
 	default:
+		wb.log.Error("%d - %s", http.StatusInternalServerError, err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write(resp.Unknown)
 	}

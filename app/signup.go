@@ -41,6 +41,6 @@ func (wb *app) Signup(w http.ResponseWriter, r *http.Request) {
 		RefreshToken string `json:"refresh_token"`
 		AccessToken  string `json:"access_token"`
 	}{refreshToken, wb.auth.GenerateAccessToken(user.Id)}
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(resp)
 }

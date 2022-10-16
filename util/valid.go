@@ -2,7 +2,6 @@ package util
 
 import (
 	"fmt"
-	"net/http"
 	"net/mail"
 	"unicode"
 
@@ -110,17 +109,16 @@ func ValidPassword(password string) error {
 		last = "one special character"
 	}
 	if count == 1 {
-		return resp.NewErrorResp(errStr+last, http.StatusBadRequest)
+		return resp.BadRequest(errStr + last)
 	}
-	return resp.NewErrorResp(errStr+"and"+last, http.StatusBadRequest)
+	return resp.BadRequest(errStr + "and" + last)
 }
 
 func ValidWordBubble(wb *model.WordBubble) error {
 	len := len(wb.Text)
 	if len < MinWordBubbleLength || len > MaxWordBubbleLength {
-		return resp.NewErrorResp(
+		return resp.BadRequest(
 			fmt.Sprintf("wordbubble sent is invalid, must be inbetween %d-%d characters, received a length of %d", MinWordBubbleLength, MaxWordBubbleLength, len),
-			http.StatusBadRequest,
 		)
 	}
 	return nil

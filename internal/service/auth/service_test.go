@@ -52,7 +52,7 @@ func Test_GenerateRefreshToken(t *testing.T) {
 		"error from database": {
 			timer: util.Unix(0),
 			repo: &testAuthRepo{
-				err: resp.NewErrorResp("boom", 0),
+				err: resp.InternalServerError("boom"),
 			},
 			userId:   1254,
 			wantsErr: true,

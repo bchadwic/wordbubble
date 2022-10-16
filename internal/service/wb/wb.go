@@ -13,19 +13,22 @@ const (
 // WordBubbleService is the interface that
 // the application uses to interact with wordbubbles
 type WordBubbleService interface {
-	// add a wordbubble for the user specified
-	// an error is returned if wordbubble is not valid
+	// AddNewWordBubble adds a wordbubble for the user specified
+	// error can be (400) - invalid wordbubble - resp.BadRequest,
+	// (409) resp.ErrMaxAmountOfWordBubblesReached, (500) resp.UnknownError or nil.
 	AddNewWordBubble(userId int64, wb *model.WordBubble) error
-	// remove and returns the latest wordbubble for the user specified
-	// the returned wordbubble may be null if none were found in the data source
+	// RemoveAndReturnLatestWordBubbleForUserId remove and returns the latest wordbubble for the user specified.
+	// *model.WordBubble may be nil if none were found in the data source.
 	RemoveAndReturnLatestWordBubbleForUserId(userId int64) *model.WordBubble
 }
 
 // WordBubbleRepo is the interface that the
 // service layer uses to interact with wordbubbles
 type WordBubbleRepo interface {
-	// add a validated wordbubble for the user specified
+	// addNewWordBubble adds a validated wordbubble for the user specified.
+	// error can be (409) resp.ErrMaxAmountOfWordBubblesReached, (500) resp.UnknownError or nil.
 	addNewWordBubble(userId int64, wb *model.WordBubble) error
-	// remove and returns the latest wordbubble for the user specified, could be nil
+	// removeAndReturnLatestWordBubbleForUserId remove and returns the latest wordbubble for the user specified, could be nil
+	// *model.WordBubble may be nil if none were found in the data source.
 	removeAndReturnLatestWordBubbleForUserId(userId int64) *model.WordBubble
 }

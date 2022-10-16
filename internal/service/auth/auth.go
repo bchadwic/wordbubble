@@ -17,28 +17,36 @@ const (
 // AuthService is the interface that the application
 // uses to interact with access and refresh tokens
 type AuthService interface {
-	// generates an access token
+	// GenerateAccessToken generates an access token
+	// string is the access token's string
 	GenerateAccessToken(userId int64) string
-	// generates a refresh token, an error is generated when the token couldn't be successfully saved to the database
+	// GenerateRefreshToken generates a refresh token, an error is generated when the token couldn't be successfully saved to the database
+	// string is the refresh token's string, or empty string.
+	// error could be (500) resp.ErrCouldNotStoreRefreshToken or nil.
 	GenerateRefreshToken(userId int64) (string, error)
-	// validates the refresh token string passed using the signing key and by checking the auth datasource
+	// ValidateRefreshToken validates the refresh token string passed using the signing key and by checking the auth datasource
+	// error could be (401) ErrRefreshTokenIsExpired, (401) resp.ErrCouldNotValidateRefreshToken or nil.
 	ValidateRefreshToken(token *refreshToken) error
 }
 
 // AuthRepo is the interface that the service layer
 // uses to interact with refresh tokens in the database
 type AuthRepo interface {
-	// store a refresh token in the database
+	// storeRefreshToken stores a refresh token in the database.
+	// error can be (500) resp.ErrCouldNotStoreRefreshToken or nil.
 	storeRefreshToken(token *refreshToken) error
-	// validate a refresh token against database
+	// validateRefreshToken validates a refresh token against database.
+	// error can be (401) resp.ErrCouldNotValidateRefreshToken or nil.
 	validateRefreshToken(token *refreshToken) error
-	// find and return the latest refresh token for a user in the database
+	// getLatestRefreshToken find and return the latest refresh token for a user in the database.
+	// refreshToken can be nil if there is no latest refresh token
 	getLatestRefreshToken(userId int64) *refreshToken
 }
 
 // AuthCleaner is the interface that the application
 // uses to clean up expired refresh tokens
 type AuthCleaner interface {
-	// remove any refresh tokens from the database that are expired
+	// CleanupExpiredRefreshTokens remove any refresh tokens from the database that are expired.
+	// error can be (500) resp.ErrCouldNotCleanupTokens or nil
 	CleanupExpiredRefreshTokens(since int64) error
 }
