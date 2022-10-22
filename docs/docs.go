@@ -10,11 +10,9 @@ const docTemplate = `{
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
-        "termsOfService": "http://swagger.io/terms/",
         "contact": {
-            "name": "API Support",
-            "url": "http://www.swagger.io/support",
-            "email": "support@swagger.io"
+            "name": "Ben Chadwick",
+            "url": "https://github.com/bchadwic"
         },
         "license": {
             "name": "Apache 2.0",
@@ -35,13 +33,13 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "authentication"
+                    "Auth"
                 ],
                 "summary": "Login to api.wordbubble.io",
                 "parameters": [
                     {
                         "description": "Credentials used to authenticate a user",
-                        "name": "AuthenticatedUser",
+                        "name": "User",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -93,7 +91,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "wordbubble"
+                    "Wordbubble"
                 ],
                 "summary": "Pop a wordbubble",
                 "parameters": [
@@ -146,6 +144,179 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/push": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Push adds a new wordbubble to a user's queue",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wordbubble"
+                ],
+                "summary": "Push a wordbubble",
+                "parameters": [
+                    {
+                        "description": "WordBubble containing the text to be stored",
+                        "name": "WordBubble",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.WordBubble"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "resp.ErrParseWordBubble, InvalidWordBubble",
+                        "schema": {
+                            "$ref": "#/definitions/resp.StatusBadRequest"
+                        }
+                    },
+                    "401": {
+                        "description": "resp.ErrUnauthorized, resp.ErrInvalidTokenSignature",
+                        "schema": {
+                            "$ref": "#/definitions/resp.StatusUnauthorized"
+                        }
+                    },
+                    "405": {
+                        "description": "resp.ErrInvalidHttpMethod",
+                        "schema": {
+                            "$ref": "#/definitions/resp.StatusMethodNotAllowed"
+                        }
+                    },
+                    "409": {
+                        "description": "resp.ErrMaxAmountOfWordBubblesReached",
+                        "schema": {
+                            "$ref": "#/definitions/resp.StatusConflict"
+                        }
+                    },
+                    "500": {
+                        "description": "resp.UnknownError",
+                        "schema": {
+                            "$ref": "#/definitions/resp.StatusInternalServerError"
+                        }
+                    }
+                }
+            }
+        },
+        "/signup": {
+            "post": {
+                "description": "Signup to api.wordbubble.io using a unique email and username",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Signup to api.wordbubble.io",
+                "parameters": [
+                    {
+                        "description": "User information required to signup",
+                        "name": "User",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.SignupUser"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "resp.ErrParseUser, resp.ErrEmailIsNotValid, resp.ErrEmailIsTooLong, resp.ErrUsernameIsTooLong, resp.ErrUsernameIsNotLongEnough, resp.ErrUsernameInvalidChars, resp.ErrUserWithUsernameAlreadyExists, resp.ErrUserWithEmailAlreadyExists, resp.ErrCouldNotDetermineUserExistence, InvalidPassword",
+                        "schema": {
+                            "$ref": "#/definitions/resp.StatusBadRequest"
+                        }
+                    },
+                    "405": {
+                        "description": "resp.ErrInvalidHttpMethod",
+                        "schema": {
+                            "$ref": "#/definitions/resp.StatusMethodNotAllowed"
+                        }
+                    },
+                    "500": {
+                        "description": "resp.ErrCouldNotBeHashPassword, resp.ErrCouldNotAddUser, resp.ErrCouldNotStoreRefreshToken",
+                        "schema": {
+                            "$ref": "#/definitions/resp.StatusInternalServerError"
+                        }
+                    }
+                }
+            }
+        },
+        "/token": {
+            "post": {
+                "description": "Token to api.wordbubble.io for authorized use",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Token to api.wordbubble.io",
+                "parameters": [
+                    {
+                        "description": "User information required to signup",
+                        "name": "User",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.SignupUser"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "resp.ErrParseUser, resp.ErrEmailIsNotValid, resp.ErrEmailIsTooLong, resp.ErrUsernameIsTooLong, resp.ErrUsernameIsNotLongEnough, resp.ErrUsernameInvalidChars, resp.ErrUserWithUsernameAlreadyExists, resp.ErrUserWithEmailAlreadyExists, resp.ErrCouldNotDetermineUserExistence, InvalidPassword",
+                        "schema": {
+                            "$ref": "#/definitions/resp.StatusBadRequest"
+                        }
+                    },
+                    "405": {
+                        "description": "resp.ErrInvalidHttpMethod",
+                        "schema": {
+                            "$ref": "#/definitions/resp.StatusMethodNotAllowed"
+                        }
+                    },
+                    "500": {
+                        "description": "resp.ErrCouldNotBeHashPassword, resp.ErrCouldNotAddUser, resp.ErrCouldNotStoreRefreshToken",
+                        "schema": {
+                            "$ref": "#/definitions/resp.StatusInternalServerError"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -170,6 +341,21 @@ const docTemplate = `{
                 "user": {
                     "type": "string",
                     "example": "ben"
+                }
+            }
+        },
+        "model.SignupUser": {
+            "description": "SignupUser is the body sent to the /signup operation",
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
                 }
             }
         },
@@ -205,6 +391,19 @@ const docTemplate = `{
                 "message": {
                     "type": "string",
                     "example": "could not determine if user passed is a username or an email"
+                }
+            }
+        },
+        "resp.StatusConflict": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 409
+                },
+                "message": {
+                    "type": "string",
+                    "example": "the max amount of wordbubbles has been created for this user"
                 }
             }
         },
@@ -262,8 +461,10 @@ const docTemplate = `{
         }
     },
     "securityDefinitions": {
-        "BasicAuth": {
-            "type": "basic"
+        "ApiKeyAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }`
@@ -271,11 +472,11 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "localhost:8080",
-	BasePath:         "/api/v1",
+	Host:             "",
+	BasePath:         "/v1",
 	Schemes:          []string{},
-	Title:            "Swagger Example API",
-	Description:      "This is a sample server celler server.",
+	Title:            "WordBubble REST API",
+	Description:      "",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 }

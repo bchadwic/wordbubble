@@ -110,14 +110,14 @@ func ValidPassword(password string) error {
 	}
 	if count == 1 {
 		return resp.BadRequest(errStr + last)
-	}
+	} // InvalidPassword
 	return resp.BadRequest(errStr + "and" + last)
 }
 
 func ValidWordBubble(wb *model.WordBubble) error {
 	len := len(wb.Text)
 	if len < MinWordBubbleLength || len > MaxWordBubbleLength {
-		return resp.BadRequest(
+		return resp.BadRequest( // InvalidWordBubble
 			fmt.Sprintf("wordbubble sent is invalid, must be inbetween %d-%d characters, received a length of %d", MinWordBubbleLength, MaxWordBubbleLength, len),
 		)
 	}

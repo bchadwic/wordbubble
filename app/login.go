@@ -11,10 +11,10 @@ import (
 // Login is used to get the access and refresh token for a user's credentials
 // @Summary     Login to api.wordbubble.io
 // @Description Login to api.wordbubble.io using the user credentials
-// @Tags        authentication
+// @Tags        Auth
 // @Accept      json
 // @Produce     json
-// @Param       AuthenticatedUser body     model.LoginUser true "Credentials used to authenticate a user"
+// @Param       User body     model.LoginUser true "Credentials used to authenticate a user"
 // @Success     200  {object} resp.AuthenticatedResponse		"Valid access and refresh tokens for user"
 // @Failure     405  {object} resp.StatusMethodNotAllowed     	"resp.ErrInvalidHttpMethod"
 // @Failure     400  {object} resp.StatusBadRequest             "resp.ErrParseUser, resp.ErrUnknownUser, resp.ErrCouldNotDetermineUserType"

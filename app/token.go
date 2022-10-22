@@ -8,6 +8,18 @@ import (
 	"github.com/bchadwic/wordbubble/resp"
 )
 
+// Token is used to retrieve a new access token from a refresh token
+// @Summary     Token to api.wordbubble.io
+// @Description Token to api.wordbubble.io for authorized use
+// @Tags        Auth
+// @Accept      json
+// @Produce     json
+// @Param       User body     model.SignupUser true "User information required to signup"
+// @Success     200  {object} 		string
+// @Failure     400  {object} 		resp.StatusBadRequest			"resp.ErrParseUser, resp.ErrEmailIsNotValid, resp.ErrEmailIsTooLong, resp.ErrUsernameIsTooLong, resp.ErrUsernameIsNotLongEnough, resp.ErrUsernameInvalidChars, resp.ErrUserWithUsernameAlreadyExists, resp.ErrUserWithEmailAlreadyExists, resp.ErrCouldNotDetermineUserExistence, InvalidPassword"
+// @Failure     405  {object} 		resp.StatusMethodNotAllowed		"resp.ErrInvalidHttpMethod"
+// @Failure     500  {object} 		resp.StatusInternalServerError	"resp.ErrCouldNotBeHashPassword, resp.ErrCouldNotAddUser, resp.ErrCouldNotStoreRefreshToken"
+// @Router      /token [post]
 func (wb *app) Token(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		wb.errorResponse(resp.ErrInvalidHttpMethod, w)

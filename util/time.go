@@ -1,7 +1,6 @@
 package util
 
 import (
-	"time"
 	t "time"
 )
 
@@ -29,9 +28,9 @@ type testTimer struct {
 	tick <-chan t.Time
 }
 
-func Unix(t int64) *testTimer {
+func Unix(ti int64) *testTimer {
 	return &testTimer{
-		now: time.Unix(t, 0),
+		now: t.Unix(ti, 0),
 	}
 }
 

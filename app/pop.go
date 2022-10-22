@@ -11,7 +11,7 @@ import (
 // Pop removes and returns a wordbubble for a user
 // @Summary     Pop a wordbubble
 // @Description Pop removes and returns a wordbubble for a user
-// @Tags        wordbubble
+// @Tags        Wordbubble
 // @Accept      json
 // @Produce     json
 // @Param       UnauthenticatedUser body     model.PopUser true "Username or email that the wordbubble will come from"
