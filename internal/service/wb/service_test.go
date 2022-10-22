@@ -2,68 +2,65 @@ package wb
 
 import (
 	"fmt"
-	"net/http"
 	"strings"
 	"testing"
 
 	cfg "github.com/bchadwic/wordbubble/internal/config"
-	"github.com/bchadwic/wordbubble/model"
-	"github.com/bchadwic/wordbubble/resp"
+	"github.com/bchadwic/wordbubble/model/req"
+	"github.com/bchadwic/wordbubble/model/resp"
 	"github.com/bchadwic/wordbubble/util"
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_AddNewWordBubble(t *testing.T) {
+func Test_AddNewWordbubble(t *testing.T) {
 	tests := map[string]struct {
-		wordbubble  *model.WordBubble
+		wordbubble  *req.WordbubbleRequest
 		userId      int64
-		repo        WordBubbleRepo
+		repo        WordbubbleRepo
 		expectedErr error
 	}{
 		"valid": {
 			userId: 3462,
-			wordbubble: &model.WordBubble{
+			wordbubble: &req.WordbubbleRequest{
 				Text: "hello world",
 			},
-			repo: &testWordBubbleRepo{},
+			repo: &testWordbubbleRepo{},
 		},
 		"invalid wordbubble text less than min bound": {
 			userId: 355,
-			wordbubble: &model.WordBubble{
-				Text: strings.Repeat(".", util.MinWordBubbleLength-1),
+			wordbubble: &req.WordbubbleRequest{
+				Text: strings.Repeat(".", util.MinWordbubbleLength-1),
 			},
-			repo: &testWordBubbleRepo{},
-			expectedErr: resp.NewErrorResp(
-				fmt.Sprintf("wordbubble sent is invalid, must be inbetween %d-%d characters, received a length of %d", util.MinWordBubbleLength, util.MaxWordBubbleLength, util.MinWordBubbleLength-1),
-				http.StatusBadRequest,
+			repo: &testWordbubbleRepo{},
+			expectedErr: resp.BadRequest(
+				fmt.Sprintf("wordbubble sent is invalid, must be inbetween %d-%d characters, received a length of %d", util.MinWordbubbleLength, util.MaxWordbubbleLength, util.MinWordbubbleLength-1),
 			),
 		},
 		"invalid wordbubble text greater than max bound": {
 			userId: 32,
-			wordbubble: &model.WordBubble{
-				Text: strings.Repeat(".", util.MaxWordBubbleLength+1),
+			wordbubble: &req.WordbubbleRequest{
+				Text: strings.Repeat(".", util.MaxWordbubbleLength+1),
 			},
-			repo: &testWordBubbleRepo{},
-			expectedErr: resp.NewErrorResp(
-				fmt.Sprintf("wordbubble sent is invalid, must be inbetween %d-%d characters, received a length of %d", util.MinWordBubbleLength, util.MaxWordBubbleLength, util.MaxWordBubbleLength+1),
-				http.StatusBadRequest,
+			repo: &testWordbubbleRepo{},
+			expectedErr: resp.BadRequest(
+				fmt.Sprintf("wordbubble sent is invalid, must be inbetween %d-%d characters, received a length of %d", util.MinWordbubbleLength, util.MaxWordbubbleLength, util.MaxWordbubbleLength+1),
 			),
 		},
 		"invalid, database error": {
 			userId: 3612,
-			wordbubble: &model.WordBubble{
+			wordbubble: &req.WordbubbleRequest{
 				Text: "hello world again",
 			},
-			repo: &testWordBubbleRepo{
-				err: resp.NewErrorResp("boom", 0),
+			repo: &testWordbubbleRepo{
+				err: resp.InternalServerError("boom"),
 			},
-			expectedErr: resp.NewErrorResp("boom", 0),
+			expectedErr: resp.InternalServerError("boom"),
 		},
 	}
 	for tname, tcase := range tests {
 		t.Run(tname, func(t *testing.T) {
-			svc := NewWordBubblesService(cfg.TestConfig(), tcase.repo)
-			err := svc.AddNewWordBubble(tcase.userId, tcase.wordbubble)
+			svc := NewWordbubblesService(cfg.TestConfig(), tcase.repo)
+			err := svc.AddNewWordbubble(tcase.userId, tcase.wordbubble)
 			if tcase.expectedErr != nil {
 				assert.NotNil(t, err)
 				assert.Equal(t, tcase.expectedErr.Error(), err.Error())
@@ -74,29 +71,29 @@ func Test_AddNewWordBubble(t *testing.T) {
 	}
 }
 
-func Test_RemoveAndReturnLatestWordBubbleForUserId(t *testing.T) {
+func Test_RemoveAndReturnLatestWordbubbleForUserId(t *testing.T) {
 	tests := map[string]struct {
 		userId             int64
-		repo               WordBubbleRepo
-		expectedWordBubble bool
+		repo               WordbubbleRepo
+		expectedWordbubble bool
 	}{
 		"wordbubble returned": {
 			userId: 3462,
-			repo: &testWordBubbleRepo{
-				wordbubble: &model.WordBubble{},
+			repo: &testWordbubbleRepo{
+				wordbubble: &req.WordbubbleRequest{},
 			},
-			expectedWordBubble: true,
+			expectedWordbubble: true,
 		},
 		"wordbubble not returned": {
 			userId: 3462,
-			repo:   &testWordBubbleRepo{},
+			repo:   &testWordbubbleRepo{},
 		},
 	}
 	for tname, tcase := range tests {
 		t.Run(tname, func(t *testing.T) {
-			svc := NewWordBubblesService(cfg.TestConfig(), tcase.repo)
-			wordbubble := svc.RemoveAndReturnLatestWordBubbleForUserId(tcase.userId)
-			if tcase.expectedWordBubble {
+			svc := NewWordbubblesService(cfg.TestConfig(), tcase.repo)
+			wordbubble := svc.RemoveAndReturnLatestWordbubbleForUserId(tcase.userId)
+			if tcase.expectedWordbubble {
 				assert.NotNil(t, wordbubble)
 			} else {
 				assert.Nil(t, wordbubble)
@@ -105,15 +102,15 @@ func Test_RemoveAndReturnLatestWordBubbleForUserId(t *testing.T) {
 	}
 }
 
-type testWordBubbleRepo struct {
+type testWordbubbleRepo struct {
 	err        error
-	wordbubble *model.WordBubble
+	wordbubble *req.WordbubbleRequest
 }
 
-func (trepo *testWordBubbleRepo) addNewWordBubble(userId int64, wb *model.WordBubble) error {
+func (trepo *testWordbubbleRepo) addNewWordbubble(userId int64, wb *req.WordbubbleRequest) error {
 	return trepo.err
 }
 
-func (trepo *testWordBubbleRepo) removeAndReturnLatestWordBubbleForUserId(userId int64) *model.WordBubble {
+func (trepo *testWordbubbleRepo) removeAndReturnLatestWordbubbleForUserId(userId int64) *req.WordbubbleRequest {
 	return trepo.wordbubble
 }

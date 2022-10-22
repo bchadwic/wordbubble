@@ -1,0 +1,488 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "wordbubble REST API interacts with auth and wordbubble data",
+        "title": "wordbubble REST API",
+        "contact": {
+            "name": "Ben Chadwick",
+            "url": "https://github.com/bchadwic",
+            "email": "benchadwick87@gmail.com"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "1.0"
+    },
+    "host": "https://api.wordbubble.com",
+    "basePath": "/v1",
+    "paths": {
+        "/login": {
+            "post": {
+                "description": "Login to api.wordbubble.io using the user credentials",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Login to api.wordbubble.io",
+                "parameters": [
+                    {
+                        "description": "Credentials used to authenticate a user",
+                        "name": "User",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model/req.LoginUser"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Valid access and refresh tokens for user",
+                        "schema": {
+                            "$ref": "#/definitions/model/resp.TokenResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "resp.ErrParseUser, resp.ErrUnknownUser, resp.ErrCouldNotDetermineUserType",
+                        "schema": {
+                            "$ref": "#/definitions/model/resp.StatusBadRequest"
+                        }
+                    },
+                    "401": {
+                        "description": "resp.ErrInvalidCredentials",
+                        "schema": {
+                            "$ref": "#/definitions/model/resp.StatusUnauthorized"
+                        }
+                    },
+                    "405": {
+                        "description": "resp.ErrInvalidHttpMethod",
+                        "schema": {
+                            "$ref": "#/definitions/model/resp.StatusMethodNotAllowed"
+                        }
+                    },
+                    "500": {
+                        "description": "resp.ErrSQLMappingError, resp.ErrCouldNotStoreRefreshToken",
+                        "schema": {
+                            "$ref": "#/definitions/model/resp.StatusInternalServerError"
+                        }
+                    }
+                }
+            }
+        },
+        "/pop": {
+            "delete": {
+                "description": "Pop removes and returns a wordbubble for a user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wordbubble"
+                ],
+                "summary": "Pop a wordbubble",
+                "parameters": [
+                    {
+                        "description": "Username or email that the wordbubble will come from",
+                        "name": "UnauthenticatedUser",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model/req.PopUser"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Latest Wordbubble for user passed",
+                        "schema": {
+                            "$ref": "#/definitions/model/req.Wordbubble"
+                        }
+                    },
+                    "201": {
+                        "description": "resp.ErrNoWordbubble",
+                        "schema": {
+                            "$ref": "#/definitions/model/resp.StatusNoContent"
+                        }
+                    },
+                    "400": {
+                        "description": "resp.ErrParseUser, resp.ErrUnknownUser, resp.ErrCouldNotDetermineUserType",
+                        "schema": {
+                            "$ref": "#/definitions/model/resp.StatusBadRequest"
+                        }
+                    },
+                    "401": {
+                        "description": "resp.ErrInvalidCredentials",
+                        "schema": {
+                            "$ref": "#/definitions/model/resp.StatusUnauthorized"
+                        }
+                    },
+                    "405": {
+                        "description": "resp.ErrInvalidHttpMethod",
+                        "schema": {
+                            "$ref": "#/definitions/model/resp.StatusMethodNotAllowed"
+                        }
+                    },
+                    "500": {
+                        "description": "resp.ErrSQLMappingError, resp.ErrCouldNotStoreRefreshToken",
+                        "schema": {
+                            "$ref": "#/definitions/model/resp.StatusInternalServerError"
+                        }
+                    }
+                }
+            }
+        },
+        "/push": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Push adds a new wordbubble to a user's queue",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wordbubble"
+                ],
+                "summary": "Push a wordbubble",
+                "parameters": [
+                    {
+                        "description": "Wordbubble containing the text to be stored",
+                        "name": "Wordbubble",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model/req.Wordbubble"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model/resp.PushResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "resp.ErrParseWordbubble, InvalidWordbubble",
+                        "schema": {
+                            "$ref": "#/definitions/model/resp.StatusBadRequest"
+                        }
+                    },
+                    "401": {
+                        "description": "resp.ErrUnauthorized, resp.ErrInvalidTokenSignature",
+                        "schema": {
+                            "$ref": "#/definitions/model/resp.StatusUnauthorized"
+                        }
+                    },
+                    "405": {
+                        "description": "resp.ErrInvalidHttpMethod",
+                        "schema": {
+                            "$ref": "#/definitions/model/resp.StatusMethodNotAllowed"
+                        }
+                    },
+                    "409": {
+                        "description": "resp.ErrMaxAmountOfWordbubblesReached",
+                        "schema": {
+                            "$ref": "#/definitions/model/resp.StatusConflict"
+                        }
+                    },
+                    "500": {
+                        "description": "resp.UnknownError",
+                        "schema": {
+                            "$ref": "#/definitions/model/resp.StatusInternalServerError"
+                        }
+                    }
+                }
+            }
+        },
+        "/signup": {
+            "post": {
+                "description": "Signup to api.wordbubble.io using a unique email and username",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Signup to api.wordbubble.io",
+                "parameters": [
+                    {
+                        "description": "User information required to signup",
+                        "name": "User",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model/req.SignupUser"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model/resp.TokenResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "resp.ErrParseUser, resp.ErrEmailIsNotValid, resp.ErrEmailIsTooLong, resp.ErrUsernameIsTooLong, resp.ErrUsernameIsNotLongEnough, resp.ErrUsernameInvalidChars, resp.ErrUserWithUsernameAlreadyExists, resp.ErrUserWithEmailAlreadyExists, resp.ErrCouldNotDetermineUserExistence, InvalidPassword",
+                        "schema": {
+                            "$ref": "#/definitions/model/resp.StatusBadRequest"
+                        }
+                    },
+                    "405": {
+                        "description": "resp.ErrInvalidHttpMethod",
+                        "schema": {
+                            "$ref": "#/definitions/model/resp.StatusMethodNotAllowed"
+                        }
+                    },
+                    "500": {
+                        "description": "resp.ErrCouldNotBeHashPassword, resp.ErrCouldNotAddUser, resp.ErrCouldNotStoreRefreshToken",
+                        "schema": {
+                            "$ref": "#/definitions/model/resp.StatusInternalServerError"
+                        }
+                    }
+                }
+            }
+        },
+        "/token": {
+            "post": {
+                "description": "Token to api.wordbubble.io for authorized use",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Token to api.wordbubble.io",
+                "parameters": [
+                    {
+                        "description": "Valid refresh token to gain a new access token",
+                        "name": "Token",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model/req.RefreshToken"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model/resp.TokenResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "resp.ErrParseRefreshToken",
+                        "schema": {
+                            "$ref": "#/definitions/model/resp.StatusBadRequest"
+                        }
+                    },
+                    "401": {
+                        "description": "resp.ErrRefreshTokenIsExpired, resp.ErrCouldNotValidateRefreshToken",
+                        "schema": {
+                            "$ref": "#/definitions/model/resp.StatusUnauthorized"
+                        }
+                    },
+                    "405": {
+                        "description": "resp.ErrInvalidHttpMethod",
+                        "schema": {
+                            "$ref": "#/definitions/model/resp.StatusMethodNotAllowed"
+                        }
+                    },
+                    "500": {
+                        "description": "resp.ErrCouldNotStoreRefreshToken",
+                        "schema": {
+                            "$ref": "#/definitions/model/resp.StatusMethodNotAllowed"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "req.LoginUser": {
+            "description": "LoginUser is the body sent to the /login operation",
+            "type": "object",
+            "properties": {
+                "password": {
+                    "type": "string",
+                    "example": "SomePassword_123"
+                },
+                "user": {
+                    "type": "string",
+                    "example": "ben"
+                }
+            }
+        },
+        "req.PopUser": {
+            "description": "PopUser is the param sent to the /pop operation",
+            "type": "object",
+            "properties": {
+                "user": {
+                    "type": "string",
+                    "example": "ben"
+                }
+            }
+        },
+        "req.RefreshToken": {
+            "type": "object",
+            "properties": {
+                "refresh_token": {
+                    "type": "string"
+                }
+            }
+        },
+        "req.SignupUser": {
+            "description": "SignupUser is the body sent to the /signup operation",
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "req.Wordbubble": {
+            "type": "object",
+            "properties": {
+                "text": {
+                    "type": "string",
+                    "example": "Hello world, this is just an example of a wordbubble"
+                }
+            }
+        },
+        "resp.PushResponse": {
+            "type": "object",
+            "properties": {
+                "text": {
+                    "type": "string",
+                    "example": "thank you!"
+                }
+            }
+        },
+        "resp.StatusBadRequest": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 400
+                },
+                "message": {
+                    "type": "string",
+                    "example": "could not determine if user passed is a username or an email"
+                }
+            }
+        },
+        "resp.StatusConflict": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 409
+                },
+                "message": {
+                    "type": "string",
+                    "example": "the max amount of wordbubbles has been created for this user"
+                }
+            }
+        },
+        "resp.StatusInternalServerError": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 500
+                },
+                "message": {
+                    "type": "string",
+                    "example": "an error occurred mapping data from the database"
+                }
+            }
+        },
+        "resp.StatusMethodNotAllowed": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 405
+                },
+                "message": {
+                    "type": "string",
+                    "example": "invalid http method"
+                }
+            }
+        },
+        "resp.StatusNoContent": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 201
+                },
+                "message": {
+                    "type": "string",
+                    "example": "could not find a wordbubble for this user"
+                }
+            }
+        },
+        "resp.StatusUnauthorized": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 401
+                },
+                "message": {
+                    "type": "string",
+                    "example": "could not validate the refresh token, please login again"
+                }
+            }
+        },
+        "resp.TokenResponse": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string",
+                    "example": "xxx.yyy.zzz"
+                },
+                "refresh_token": {
+                    "type": "string",
+                    "example": "xxx.yyy.zzz"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "description": "JWT access token retrieved from using a refresh token, gathered from /signup, /login, or /token",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    }
+}

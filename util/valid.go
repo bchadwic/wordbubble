@@ -2,20 +2,20 @@ package util
 
 import (
 	"fmt"
-	"net/http"
 	"net/mail"
 	"unicode"
 
 	"github.com/bchadwic/wordbubble/model"
-	"github.com/bchadwic/wordbubble/resp"
+	"github.com/bchadwic/wordbubble/model/req"
+	"github.com/bchadwic/wordbubble/model/resp"
 )
 
 const (
 	minPasswordLength   = 6
 	maxUsernameLength   = 40
 	maxEmailLength      = 320
-	MinWordBubbleLength = 1
-	MaxWordBubbleLength = 255
+	MinWordbubbleLength = 1
+	MaxWordbubbleLength = 255
 )
 
 // validate all the fields of a user
@@ -110,17 +110,16 @@ func ValidPassword(password string) error {
 		last = "one special character"
 	}
 	if count == 1 {
-		return resp.NewErrorResp(errStr+last, http.StatusBadRequest)
-	}
-	return resp.NewErrorResp(errStr+"and"+last, http.StatusBadRequest)
+		return resp.BadRequest(errStr + last)
+	} // InvalidPassword
+	return resp.BadRequest(errStr + "and" + last)
 }
 
-func ValidWordBubble(wb *model.WordBubble) error {
+func ValidWordbubble(wb *req.WordbubbleRequest) error {
 	len := len(wb.Text)
-	if len < MinWordBubbleLength || len > MaxWordBubbleLength {
-		return resp.NewErrorResp(
-			fmt.Sprintf("wordbubble sent is invalid, must be inbetween %d-%d characters, received a length of %d", MinWordBubbleLength, MaxWordBubbleLength, len),
-			http.StatusBadRequest,
+	if len < MinWordbubbleLength || len > MaxWordbubbleLength {
+		return resp.BadRequest( // InvalidWordbubble
+			fmt.Sprintf("wordbubble sent is invalid, must be inbetween %d-%d characters, received a length of %d", MinWordbubbleLength, MaxWordbubbleLength, len),
 		)
 	}
 	return nil

@@ -7,19 +7,19 @@ import (
 	"github.com/bchadwic/wordbubble/internal/service/auth"
 	"github.com/bchadwic/wordbubble/internal/service/user"
 	"github.com/bchadwic/wordbubble/internal/service/wb"
-	"github.com/bchadwic/wordbubble/resp"
+	"github.com/bchadwic/wordbubble/model/resp"
 	"github.com/bchadwic/wordbubble/util"
 )
 
 type app struct {
 	auth        auth.AuthService
 	users       user.UserService
-	wordbubbles wb.WordBubbleService
+	wordbubbles wb.WordbubbleService
 	log         util.Logger
 	timer       util.Timer
 }
 
-func NewApp(cfg cfg.Config, authService auth.AuthService, userService user.UserService, wbService wb.WordBubbleService) *app {
+func NewApp(cfg cfg.Config, authService auth.AuthService, userService user.UserService, wbService wb.WordbubbleService) *app {
 	return &app{
 		auth:        authService,
 		users:       userService,
@@ -29,7 +29,7 @@ func NewApp(cfg cfg.Config, authService auth.AuthService, userService user.UserS
 	}
 }
 
-// TODO make this better
+// TODO make this entire file better
 func (wb *app) BackgroundCleaner(authCleaner auth.AuthCleaner) {
 	const refreshTokenTimeLimit = 60
 	go func() {
@@ -40,12 +40,33 @@ func (wb *app) BackgroundCleaner(authCleaner auth.AuthCleaner) {
 }
 
 func (wb *app) errorResponse(err error, w http.ResponseWriter) {
-	wb.log.Error("an error occurred %s", err.Error())
 	switch t := err.(type) {
-	case *resp.ErrorResponse:
+	case *resp.StatusNoContent:
+		wb.log.Warn("%d - %s", t.Code, t.Error())
 		w.WriteHeader(t.Code)
-		w.Write(t.Message)
+		w.Write([]byte(t.Message))
+	case *resp.StatusBadRequest:
+		wb.log.Warn("%d - %s", t.Code, t.Error())
+		w.WriteHeader(t.Code)
+		w.Write([]byte(t.Message))
+	case *resp.StatusUnauthorized:
+		wb.log.Warn("%d - %s", t.Code, t.Error())
+		w.WriteHeader(t.Code)
+		w.Write([]byte(t.Message))
+	case *resp.StatusMethodNotAllowed:
+		wb.log.Warn("%d - %s", t.Code, t.Error())
+		w.WriteHeader(t.Code)
+		w.Write([]byte(t.Message))
+	case *resp.StatusConflict:
+		wb.log.Warn("%d - %s", t.Code, t.Error())
+		w.WriteHeader(t.Code)
+		w.Write([]byte(t.Message))
+	case *resp.StatusInternalServerError:
+		wb.log.Warn("%d - %s", t.Code, t.Error())
+		w.WriteHeader(t.Code)
+		w.Write([]byte(t.Message))
 	default:
+		wb.log.Error("%d - %s", http.StatusInternalServerError, err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write(resp.Unknown)
 	}
