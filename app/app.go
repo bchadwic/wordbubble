@@ -14,12 +14,12 @@ import (
 type app struct {
 	auth        auth.AuthService
 	users       user.UserService
-	wordbubbles wb.WordBubbleService
+	wordbubbles wb.WordbubbleService
 	log         util.Logger
 	timer       util.Timer
 }
 
-func NewApp(cfg cfg.Config, authService auth.AuthService, userService user.UserService, wbService wb.WordBubbleService) *app {
+func NewApp(cfg cfg.Config, authService auth.AuthService, userService user.UserService, wbService wb.WordbubbleService) *app {
 	return &app{
 		auth:        authService,
 		users:       userService,
@@ -29,7 +29,7 @@ func NewApp(cfg cfg.Config, authService auth.AuthService, userService user.UserS
 	}
 }
 
-// TODO make this better
+// TODO make this entire file better
 func (wb *app) BackgroundCleaner(authCleaner auth.AuthCleaner) {
 	const refreshTokenTimeLimit = 60
 	go func() {

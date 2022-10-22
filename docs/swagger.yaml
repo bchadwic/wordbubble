@@ -17,6 +17,11 @@ definitions:
         example: ben
         type: string
     type: object
+  model.RefreshToken:
+    properties:
+      refresh_token:
+        type: string
+    type: object
   model.SignupUser:
     description: SignupUser is the body sent to the /signup operation
     properties:
@@ -27,19 +32,16 @@ definitions:
       username:
         type: string
     type: object
-  model.WordBubble:
+  model.Wordbubble:
     properties:
       text:
         example: Hello world, this is just an example of a wordbubble
         type: string
     type: object
-  resp.AuthenticatedResponse:
+  resp.PushResponse:
     properties:
-      access_token:
-        example: xxx.yyy.zzz
-        type: string
-      refresh_token:
-        example: xxx.yyy.zzz
+      text:
+        example: thank you!
         type: string
     type: object
   resp.StatusBadRequest:
@@ -96,14 +98,26 @@ definitions:
         example: could not validate the refresh token, please login again
         type: string
     type: object
+  resp.TokenResponse:
+    properties:
+      access_token:
+        example: xxx.yyy.zzz
+        type: string
+      refresh_token:
+        example: xxx.yyy.zzz
+        type: string
+    type: object
+host: https://api.wordbubble.com
 info:
   contact:
+    email: benchadwick87@gmail.com
     name: Ben Chadwick
     url: https://github.com/bchadwic
+  description: wordbubble REST API interacts with auth and wordbubble data
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
-  title: WordBubble REST API
+  title: wordbubble REST API
   version: "1.0"
 paths:
   /login:
@@ -124,7 +138,7 @@ paths:
         "200":
           description: Valid access and refresh tokens for user
           schema:
-            $ref: '#/definitions/resp.AuthenticatedResponse'
+            $ref: '#/definitions/resp.TokenResponse'
         "400":
           description: resp.ErrParseUser, resp.ErrUnknownUser, resp.ErrCouldNotDetermineUserType
           schema:
@@ -143,7 +157,7 @@ paths:
             $ref: '#/definitions/resp.StatusInternalServerError'
       summary: Login to api.wordbubble.io
       tags:
-      - Auth
+      - auth
   /pop:
     delete:
       consumes:
@@ -160,11 +174,11 @@ paths:
       - application/json
       responses:
         "200":
-          description: Latest WordBubble for user passed
+          description: Latest Wordbubble for user passed
           schema:
-            $ref: '#/definitions/model.WordBubble'
+            $ref: '#/definitions/model.Wordbubble'
         "201":
-          description: resp.ErrNoWordBubble
+          description: resp.ErrNoWordbubble
           schema:
             $ref: '#/definitions/resp.StatusNoContent'
         "400":
@@ -185,28 +199,28 @@ paths:
             $ref: '#/definitions/resp.StatusInternalServerError'
       summary: Pop a wordbubble
       tags:
-      - Wordbubble
+      - wordbubble
   /push:
     post:
       consumes:
       - application/json
       description: Push adds a new wordbubble to a user's queue
       parameters:
-      - description: WordBubble containing the text to be stored
+      - description: Wordbubble containing the text to be stored
         in: body
-        name: WordBubble
+        name: Wordbubble
         required: true
         schema:
-          $ref: '#/definitions/model.WordBubble'
+          $ref: '#/definitions/model.Wordbubble'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            type: string
+            $ref: '#/definitions/resp.PushResponse'
         "400":
-          description: resp.ErrParseWordBubble, InvalidWordBubble
+          description: resp.ErrParseWordbubble, InvalidWordbubble
           schema:
             $ref: '#/definitions/resp.StatusBadRequest'
         "401":
@@ -218,7 +232,7 @@ paths:
           schema:
             $ref: '#/definitions/resp.StatusMethodNotAllowed'
         "409":
-          description: resp.ErrMaxAmountOfWordBubblesReached
+          description: resp.ErrMaxAmountOfWordbubblesReached
           schema:
             $ref: '#/definitions/resp.StatusConflict'
         "500":
@@ -229,7 +243,7 @@ paths:
       - ApiKeyAuth: []
       summary: Push a wordbubble
       tags:
-      - Wordbubble
+      - wordbubble
   /signup:
     post:
       consumes:
@@ -248,7 +262,7 @@ paths:
         "200":
           description: OK
           schema:
-            type: string
+            $ref: '#/definitions/resp.TokenResponse'
         "400":
           description: resp.ErrParseUser, resp.ErrEmailIsNotValid, resp.ErrEmailIsTooLong,
             resp.ErrUsernameIsTooLong, resp.ErrUsernameIsNotLongEnough, resp.ErrUsernameInvalidChars,
@@ -266,46 +280,49 @@ paths:
             $ref: '#/definitions/resp.StatusInternalServerError'
       summary: Signup to api.wordbubble.io
       tags:
-      - Auth
+      - auth
   /token:
     post:
       consumes:
       - application/json
       description: Token to api.wordbubble.io for authorized use
       parameters:
-      - description: User information required to signup
+      - description: Valid refresh token to gain a new access token
         in: body
-        name: User
+        name: Token
         required: true
         schema:
-          $ref: '#/definitions/model.SignupUser'
+          $ref: '#/definitions/model.RefreshToken'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            type: string
+            $ref: '#/definitions/resp.TokenResponse'
         "400":
-          description: resp.ErrParseUser, resp.ErrEmailIsNotValid, resp.ErrEmailIsTooLong,
-            resp.ErrUsernameIsTooLong, resp.ErrUsernameIsNotLongEnough, resp.ErrUsernameInvalidChars,
-            resp.ErrUserWithUsernameAlreadyExists, resp.ErrUserWithEmailAlreadyExists,
-            resp.ErrCouldNotDetermineUserExistence, InvalidPassword
+          description: resp.ErrParseRefreshToken
           schema:
             $ref: '#/definitions/resp.StatusBadRequest'
+        "401":
+          description: resp.ErrRefreshTokenIsExpired, resp.ErrCouldNotValidateRefreshToken
+          schema:
+            $ref: '#/definitions/resp.StatusUnauthorized'
         "405":
           description: resp.ErrInvalidHttpMethod
           schema:
             $ref: '#/definitions/resp.StatusMethodNotAllowed'
         "500":
-          description: resp.ErrCouldNotBeHashPassword, resp.ErrCouldNotAddUser, resp.ErrCouldNotStoreRefreshToken
+          description: resp.ErrCouldNotStoreRefreshToken
           schema:
-            $ref: '#/definitions/resp.StatusInternalServerError'
+            $ref: '#/definitions/resp.StatusMethodNotAllowed'
       summary: Token to api.wordbubble.io
       tags:
-      - Auth
+      - auth
 securityDefinitions:
   ApiKeyAuth:
+    description: JWT access token retrieved from using a refresh token, gathered from
+      /signup, /login, or /token
     in: header
     name: Authorization
     type: apiKey

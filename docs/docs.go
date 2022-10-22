@@ -12,7 +12,8 @@ const docTemplate = `{
         "title": "{{.Title}}",
         "contact": {
             "name": "Ben Chadwick",
-            "url": "https://github.com/bchadwic"
+            "url": "https://github.com/bchadwic",
+            "email": "benchadwick87@gmail.com"
         },
         "license": {
             "name": "Apache 2.0",
@@ -33,7 +34,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Auth"
+                    "auth"
                 ],
                 "summary": "Login to api.wordbubble.io",
                 "parameters": [
@@ -51,7 +52,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Valid access and refresh tokens for user",
                         "schema": {
-                            "$ref": "#/definitions/resp.AuthenticatedResponse"
+                            "$ref": "#/definitions/resp.TokenResponse"
                         }
                     },
                     "400": {
@@ -91,7 +92,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Wordbubble"
+                    "wordbubble"
                 ],
                 "summary": "Pop a wordbubble",
                 "parameters": [
@@ -107,13 +108,13 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Latest WordBubble for user passed",
+                        "description": "Latest Wordbubble for user passed",
                         "schema": {
-                            "$ref": "#/definitions/model.WordBubble"
+                            "$ref": "#/definitions/model.Wordbubble"
                         }
                     },
                     "201": {
-                        "description": "resp.ErrNoWordBubble",
+                        "description": "resp.ErrNoWordbubble",
                         "schema": {
                             "$ref": "#/definitions/resp.StatusNoContent"
                         }
@@ -160,17 +161,17 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Wordbubble"
+                    "wordbubble"
                 ],
                 "summary": "Push a wordbubble",
                 "parameters": [
                     {
-                        "description": "WordBubble containing the text to be stored",
-                        "name": "WordBubble",
+                        "description": "Wordbubble containing the text to be stored",
+                        "name": "Wordbubble",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.WordBubble"
+                            "$ref": "#/definitions/model.Wordbubble"
                         }
                     }
                 ],
@@ -178,11 +179,11 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/resp.PushResponse"
                         }
                     },
                     "400": {
-                        "description": "resp.ErrParseWordBubble, InvalidWordBubble",
+                        "description": "resp.ErrParseWordbubble, InvalidWordbubble",
                         "schema": {
                             "$ref": "#/definitions/resp.StatusBadRequest"
                         }
@@ -200,7 +201,7 @@ const docTemplate = `{
                         }
                     },
                     "409": {
-                        "description": "resp.ErrMaxAmountOfWordBubblesReached",
+                        "description": "resp.ErrMaxAmountOfWordbubblesReached",
                         "schema": {
                             "$ref": "#/definitions/resp.StatusConflict"
                         }
@@ -224,7 +225,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Auth"
+                    "auth"
                 ],
                 "summary": "Signup to api.wordbubble.io",
                 "parameters": [
@@ -242,7 +243,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/resp.TokenResponse"
                         }
                     },
                     "400": {
@@ -276,17 +277,17 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Auth"
+                    "auth"
                 ],
                 "summary": "Token to api.wordbubble.io",
                 "parameters": [
                     {
-                        "description": "User information required to signup",
-                        "name": "User",
+                        "description": "Valid refresh token to gain a new access token",
+                        "name": "Token",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.SignupUser"
+                            "$ref": "#/definitions/model.RefreshToken"
                         }
                     }
                 ],
@@ -294,13 +295,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/resp.TokenResponse"
                         }
                     },
                     "400": {
-                        "description": "resp.ErrParseUser, resp.ErrEmailIsNotValid, resp.ErrEmailIsTooLong, resp.ErrUsernameIsTooLong, resp.ErrUsernameIsNotLongEnough, resp.ErrUsernameInvalidChars, resp.ErrUserWithUsernameAlreadyExists, resp.ErrUserWithEmailAlreadyExists, resp.ErrCouldNotDetermineUserExistence, InvalidPassword",
+                        "description": "resp.ErrParseRefreshToken",
                         "schema": {
                             "$ref": "#/definitions/resp.StatusBadRequest"
+                        }
+                    },
+                    "401": {
+                        "description": "resp.ErrRefreshTokenIsExpired, resp.ErrCouldNotValidateRefreshToken",
+                        "schema": {
+                            "$ref": "#/definitions/resp.StatusUnauthorized"
                         }
                     },
                     "405": {
@@ -310,9 +317,9 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "resp.ErrCouldNotBeHashPassword, resp.ErrCouldNotAddUser, resp.ErrCouldNotStoreRefreshToken",
+                        "description": "resp.ErrCouldNotStoreRefreshToken",
                         "schema": {
-                            "$ref": "#/definitions/resp.StatusInternalServerError"
+                            "$ref": "#/definitions/resp.StatusMethodNotAllowed"
                         }
                     }
                 }
@@ -344,6 +351,14 @@ const docTemplate = `{
                 }
             }
         },
+        "model.RefreshToken": {
+            "type": "object",
+            "properties": {
+                "refresh_token": {
+                    "type": "string"
+                }
+            }
+        },
         "model.SignupUser": {
             "description": "SignupUser is the body sent to the /signup operation",
             "type": "object",
@@ -359,7 +374,7 @@ const docTemplate = `{
                 }
             }
         },
-        "model.WordBubble": {
+        "model.Wordbubble": {
             "type": "object",
             "properties": {
                 "text": {
@@ -368,16 +383,12 @@ const docTemplate = `{
                 }
             }
         },
-        "resp.AuthenticatedResponse": {
+        "resp.PushResponse": {
             "type": "object",
             "properties": {
-                "access_token": {
+                "text": {
                     "type": "string",
-                    "example": "xxx.yyy.zzz"
-                },
-                "refresh_token": {
-                    "type": "string",
-                    "example": "xxx.yyy.zzz"
+                    "example": "thank you!"
                 }
             }
         },
@@ -458,10 +469,24 @@ const docTemplate = `{
                     "example": "could not validate the refresh token, please login again"
                 }
             }
+        },
+        "resp.TokenResponse": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string",
+                    "example": "xxx.yyy.zzz"
+                },
+                "refresh_token": {
+                    "type": "string",
+                    "example": "xxx.yyy.zzz"
+                }
+            }
         }
     },
     "securityDefinitions": {
         "ApiKeyAuth": {
+            "description": "JWT access token retrieved from using a refresh token, gathered from /signup, /login, or /token",
             "type": "apiKey",
             "name": "Authorization",
             "in": "header"
@@ -472,11 +497,11 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "",
+	Host:             "https://api.wordbubble.com",
 	BasePath:         "/v1",
 	Schemes:          []string{},
-	Title:            "WordBubble REST API",
-	Description:      "",
+	Title:            "wordbubble REST API",
+	Description:      "wordbubble REST API interacts with auth and wordbubble data",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 }

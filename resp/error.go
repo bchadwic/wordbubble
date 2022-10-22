@@ -6,8 +6,8 @@ import (
 
 var (
 	Unknown                           = []byte("sorry, it looks like an unknown error occurred")
-	ErrNoWordBubble                   = NoContent("could not find a wordbubble for this user")
-	ErrParseWordBubble                = BadRequest("could not parse wordbubble from request body")
+	ErrNoWordbubble                   = NoContent("could not find a wordbubble for this user")
+	ErrParseWordbubble                = BadRequest("could not parse wordbubble from request body")
 	ErrParseUser                      = BadRequest("could not parse user from request body")
 	ErrParseRefreshToken              = BadRequest("could not parse refresh token from request body")
 	ErrCouldNotDetermineUserType      = BadRequest("could not determine if user passed is a username or an email")
@@ -25,7 +25,7 @@ var (
 	ErrRefreshTokenIsExpired          = Unauthorized("refresh token is expired, please login again")
 	ErrInvalidTokenSignature          = Unauthorized("token signature was found to be invalid")
 	ErrInvalidHttpMethod              = MethodNotAllowed("invalid http method")
-	ErrMaxAmountOfWordBubblesReached  = Conflict("the max amount of wordbubbles has been created for this user")
+	ErrMaxAmountOfWordbubblesReached  = Conflict("the max amount of wordbubbles has been created for this user")
 	ErrCouldNotStoreRefreshToken      = InternalServerError("could not successfully store refresh token")
 	ErrCouldNotDetermineUserExistence = InternalServerError("could not determine if user exists")
 	ErrCouldNotBeHashPassword         = InternalServerError("an error occurred storing password")

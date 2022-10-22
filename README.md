@@ -1,11 +1,11 @@
 
-# WordBubble
+# Wordbubble
 
 REST queue for sending and receiving information
 
 ## API Reference (v0.0.1)
 
-### Sign up to WordBubble
+### Sign up to Wordbubble
 
 ```
 POST /signup
@@ -15,7 +15,7 @@ POST /signup
 {
     "username": "bchadwic",
     "email": "benchadwick87@gmail.com",
-    "password": "WordBubble123!"
+    "password": "Wordbubble123!"
 }
 ```
 ##### Response Body
@@ -34,7 +34,7 @@ POST /signup
 | `password`  | key to get a token  | `>6` characters of an uppercase, a lowercase, a number, and a symbol | ✓ |
 
 
-### Login to WordBubble
+### Login to Wordbubble
 
 ```
 POST /login
@@ -43,7 +43,7 @@ POST /login
 ```json
 {
     "username": "bchadwic",
-    "password": "WordBubble123!"
+    "password": "Wordbubble123!"
 }
 ```
 ##### Response Body
@@ -84,7 +84,7 @@ POST /token
 #### Additional Information
 If the `refresh_token` is about to expire (token has 20% life left) then a new or an existing longer lasting `refresh_token` will be sent back in the body.
 
-### Push a new WordBubble
+### Push a new Wordbubble
 
 ```
 POST /push
@@ -132,7 +132,7 @@ Hello World!
 ## FAQ
 
 #### Why is the path to poll from a queue `/pop`?
-Because you pop WordBubbles.
+Because you pop Wordbubbles.
 
 
 ## Logging Standard

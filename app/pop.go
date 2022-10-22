@@ -11,16 +11,16 @@ import (
 // Pop removes and returns a wordbubble for a user
 // @Summary     Pop a wordbubble
 // @Description Pop removes and returns a wordbubble for a user
-// @Tags        Wordbubble
+// @Tags        wordbubble
 // @Accept      json
 // @Produce     json
-// @Param       UnauthenticatedUser body     model.PopUser true "Username or email that the wordbubble will come from"
-// @Success     200  {object} model.WordBubble					"Latest WordBubble for user passed"
-// @Success     201  {object} resp.StatusNoContent 				"resp.ErrNoWordBubble"
-// @Failure     405  {object} resp.StatusMethodNotAllowed     	"resp.ErrInvalidHttpMethod"
-// @Failure     400  {object} resp.StatusBadRequest             "resp.ErrParseUser, resp.ErrUnknownUser, resp.ErrCouldNotDetermineUserType"
-// @Failure     401  {object} resp.StatusUnauthorized           "resp.ErrInvalidCredentials"
-// @Failure     500  {object} resp.StatusInternalServerError 	"resp.ErrSQLMappingError, resp.ErrCouldNotStoreRefreshToken"
+// @Param       UnauthenticatedUser body     model.PopUser                  true "Username or email that the wordbubble will come from"
+// @Success     200                 {object} model.Wordbubble               "Latest Wordbubble for user passed"
+// @Success     201                 {object} resp.StatusNoContent           "resp.ErrNoWordbubble"
+// @Failure     405                 {object} resp.StatusMethodNotAllowed    "resp.ErrInvalidHttpMethod"
+// @Failure     400                 {object} resp.StatusBadRequest          "resp.ErrParseUser, resp.ErrUnknownUser, resp.ErrCouldNotDetermineUserType"
+// @Failure     401                 {object} resp.StatusUnauthorized        "resp.ErrInvalidCredentials"
+// @Failure     500                 {object} resp.StatusInternalServerError "resp.ErrSQLMappingError, resp.ErrCouldNotStoreRefreshToken"
 // @Router      /pop [delete]
 func (wb *app) Pop(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
@@ -40,9 +40,9 @@ func (wb *app) Pop(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	wordbubble := wb.wordbubbles.RemoveAndReturnLatestWordBubbleForUserId(user.Id)
+	wordbubble := wb.wordbubbles.RemoveAndReturnLatestWordbubbleForUserId(user.Id)
 	if wordbubble == nil {
-		wb.errorResponse(resp.ErrNoWordBubble, w)
+		wb.errorResponse(resp.ErrNoWordbubble, w)
 		return
 	}
 	w.WriteHeader(http.StatusOK)

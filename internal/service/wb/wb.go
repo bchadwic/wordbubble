@@ -5,30 +5,30 @@ import (
 )
 
 const (
-	maxAmountOfWordBubbles                   = 10
-	AddNewWordBubble                         = `INSERT INTO wordbubbles (user_id, text) SELECT ?, ? WHERE (SELECT COUNT(*) from wordbubbles WHERE user_id = ?) < ?;`
-	RemoveAndReturnLatestWordBubbleForUserId = `DELETE FROM wordbubbles WHERE wordbubble_id = (SELECT wordbubble_id FROM wordbubbles WHERE user_id = ? ORDER BY created_timestamp ASC LIMIT 1) RETURNING text;`
+	maxAmountOfWordbubbles                   = 10
+	AddNewWordbubble                         = `INSERT INTO wordbubbles (user_id, text) SELECT ?, ? WHERE (SELECT COUNT(*) from wordbubbles WHERE user_id = ?) < ?;`
+	RemoveAndReturnLatestWordbubbleForUserId = `DELETE FROM wordbubbles WHERE wordbubble_id = (SELECT wordbubble_id FROM wordbubbles WHERE user_id = ? ORDER BY created_timestamp ASC LIMIT 1) RETURNING text;`
 )
 
-// WordBubbleService is the interface that
+// WordbubbleService is the interface that
 // the application uses to interact with wordbubbles
-type WordBubbleService interface {
-	// AddNewWordBubble adds a wordbubble for the user specified
+type WordbubbleService interface {
+	// AddNewWordbubble adds a wordbubble for the user specified
 	// error can be (400) - invalid wordbubble - resp.BadRequest,
-	// (409) resp.ErrMaxAmountOfWordBubblesReached, (500) resp.UnknownError or nil.
-	AddNewWordBubble(userId int64, wb *model.WordBubble) error
-	// RemoveAndReturnLatestWordBubbleForUserId remove and returns the latest wordbubble for the user specified.
-	// *model.WordBubble may be nil if none were found in the data source.
-	RemoveAndReturnLatestWordBubbleForUserId(userId int64) *model.WordBubble
+	// (409) resp.ErrMaxAmountOfWordbubblesReached, (500) resp.UnknownError or nil.
+	AddNewWordbubble(userId int64, wb *model.Wordbubble) error
+	// RemoveAndReturnLatestWordbubbleForUserId remove and returns the latest wordbubble for the user specified.
+	// *model.Wordbubble may be nil if none were found in the data source.
+	RemoveAndReturnLatestWordbubbleForUserId(userId int64) *model.Wordbubble
 }
 
-// WordBubbleRepo is the interface that the
+// WordbubbleRepo is the interface that the
 // service layer uses to interact with wordbubbles
-type WordBubbleRepo interface {
-	// addNewWordBubble adds a validated wordbubble for the user specified.
-	// error can be (409) resp.ErrMaxAmountOfWordBubblesReached, (500) resp.UnknownError or nil.
-	addNewWordBubble(userId int64, wb *model.WordBubble) error
-	// removeAndReturnLatestWordBubbleForUserId remove and returns the latest wordbubble for the user specified, could be nil
-	// *model.WordBubble may be nil if none were found in the data source.
-	removeAndReturnLatestWordBubbleForUserId(userId int64) *model.WordBubble
+type WordbubbleRepo interface {
+	// addNewWordbubble adds a validated wordbubble for the user specified.
+	// error can be (409) resp.ErrMaxAmountOfWordbubblesReached, (500) resp.UnknownError or nil.
+	addNewWordbubble(userId int64, wb *model.Wordbubble) error
+	// removeAndReturnLatestWordbubbleForUserId remove and returns the latest wordbubble for the user specified, could be nil
+	// *model.Wordbubble may be nil if none were found in the data source.
+	removeAndReturnLatestWordbubbleForUserId(userId int64) *model.Wordbubble
 }

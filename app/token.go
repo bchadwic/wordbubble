@@ -5,20 +5,22 @@ import (
 	"net/http"
 
 	"github.com/bchadwic/wordbubble/internal/service/auth"
+	"github.com/bchadwic/wordbubble/model"
 	"github.com/bchadwic/wordbubble/resp"
 )
 
 // Token is used to retrieve a new access token from a refresh token
 // @Summary     Token to api.wordbubble.io
 // @Description Token to api.wordbubble.io for authorized use
-// @Tags        Auth
+// @Tags        auth
 // @Accept      json
 // @Produce     json
-// @Param       User body     model.SignupUser true "User information required to signup"
-// @Success     200  {object} 		string
-// @Failure     400  {object} 		resp.StatusBadRequest			"resp.ErrParseUser, resp.ErrEmailIsNotValid, resp.ErrEmailIsTooLong, resp.ErrUsernameIsTooLong, resp.ErrUsernameIsNotLongEnough, resp.ErrUsernameInvalidChars, resp.ErrUserWithUsernameAlreadyExists, resp.ErrUserWithEmailAlreadyExists, resp.ErrCouldNotDetermineUserExistence, InvalidPassword"
-// @Failure     405  {object} 		resp.StatusMethodNotAllowed		"resp.ErrInvalidHttpMethod"
-// @Failure     500  {object} 		resp.StatusInternalServerError	"resp.ErrCouldNotBeHashPassword, resp.ErrCouldNotAddUser, resp.ErrCouldNotStoreRefreshToken"
+// @Param       Token body     model.RefreshToken true "Valid refresh token to gain a new access token"
+// @Success     200   {object} resp.TokenResponse
+// @Failure     400   {object} resp.StatusBadRequest       "resp.ErrParseRefreshToken"
+// @Failure     401   {object} resp.StatusUnauthorized     "resp.ErrRefreshTokenIsExpired, resp.ErrCouldNotValidateRefreshToken"
+// @Failure     405   {object} resp.StatusMethodNotAllowed "resp.ErrInvalidHttpMethod"
+// @Failure     500   {object} resp.StatusMethodNotAllowed "resp.ErrCouldNotStoreRefreshToken"
 // @Router      /token [post]
 func (wb *app) Token(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -26,15 +28,13 @@ func (wb *app) Token(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var reqBody struct {
-		TokenString string `json:"refresh_token"`
-	}
+	var reqBody model.RefreshToken
 	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
-		wb.errorResponse(resp.ErrInvalidHttpMethod, w)
+		wb.errorResponse(resp.ErrParseRefreshToken, w)
 		return
 	}
 
-	token, err := auth.RefreshTokenFromTokenString(reqBody.TokenString)
+	token, err := auth.RefreshTokenFromTokenString(reqBody.Token)
 	if err != nil {
 		wb.errorResponse(err, w)
 		return
@@ -49,10 +49,10 @@ func (wb *app) Token(w http.ResponseWriter, r *http.Request) {
 		latestRefreshToken, _ = wb.auth.GenerateRefreshToken(token.UserId())
 	}
 
-	resp := struct {
-		RefreshToken string `json:"refresh_token,omitempty"`
-		AccessToken  string `json:"access_token"`
-	}{latestRefreshToken, wb.auth.GenerateAccessToken(token.UserId())}
+	resp := &resp.TokenResponse{
+		RefreshToken: latestRefreshToken,
+		AccessToken:  wb.auth.GenerateAccessToken(token.UserId()),
+	}
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(resp)
 }

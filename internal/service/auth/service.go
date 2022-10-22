@@ -69,7 +69,7 @@ func (svc *authService) checkRefreshTokenExpiry(token *refreshToken) error {
 func RefreshTokenFromTokenString(tokenStr string) (*refreshToken, error) {
 	claims, err := util.ParseWithClaims(tokenStr)
 	if err != nil {
-		return nil, err
+		return nil, resp.ErrParseRefreshToken
 	}
 	return &refreshToken{
 		string:   tokenStr,

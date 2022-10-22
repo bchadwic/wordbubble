@@ -14,29 +14,29 @@ type wordBubbleRepo struct {
 	log util.Logger
 }
 
-func NewWordBubbleRepo(config cfg.Config) *wordBubbleRepo {
+func NewWordbubbleRepo(config cfg.Config) *wordBubbleRepo {
 	return &wordBubbleRepo{
 		log: config.NewLogger("wb_repo"),
 		db:  config.DB(),
 	}
 }
 
-func (repo *wordBubbleRepo) addNewWordBubble(userId int64, wb *model.WordBubble) error {
-	rs, err := repo.db.Exec(AddNewWordBubble, userId, wb.Text, userId, maxAmountOfWordBubbles)
+func (repo *wordBubbleRepo) addNewWordbubble(userId int64, wb *model.Wordbubble) error {
+	rs, err := repo.db.Exec(AddNewWordbubble, userId, wb.Text, userId, maxAmountOfWordbubbles)
 	if err != nil {
 		repo.log.Error("execute error for adding a wordbubble %+v for user: %d, error: %s", wb, userId, err)
 		return err
 	}
 	amt, _ := rs.RowsAffected()
 	if amt <= 0 {
-		return resp.ErrMaxAmountOfWordBubblesReached
+		return resp.ErrMaxAmountOfWordbubblesReached
 	}
 	return nil
 }
 
-func (repo *wordBubbleRepo) removeAndReturnLatestWordBubbleForUserId(userId int64) *model.WordBubble {
-	row := repo.db.QueryRow(RemoveAndReturnLatestWordBubbleForUserId, userId)
-	var wordbubble model.WordBubble
+func (repo *wordBubbleRepo) removeAndReturnLatestWordbubbleForUserId(userId int64) *model.Wordbubble {
+	row := repo.db.QueryRow(RemoveAndReturnLatestWordbubbleForUserId, userId)
+	var wordbubble model.Wordbubble
 	if err := row.Scan(&wordbubble.Text); err != nil {
 		repo.log.Error("could not map db wordbubble text for user: %d, error: %s", userId, err)
 		return nil

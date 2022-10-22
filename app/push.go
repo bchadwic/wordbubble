@@ -13,20 +13,19 @@ import (
 // Push queues a wordbubble for a user
 // @Summary     Push a wordbubble
 // @Description Push adds a new wordbubble to a user's queue
-// @Tags        Wordbubble
+// @Tags        wordbubble
 // @Accept      json
 // @Produce     json
-// @Security 	ApiKeyAuth
-// @Param       WordBubble body     model.WordBubble true "WordBubble containing the text to be stored"
-// @Success     200  {object} 		string
-// @Failure     405  {object} 		resp.StatusMethodNotAllowed		"resp.ErrInvalidHttpMethod"
-// @Failure     400  {object} 		resp.StatusBadRequest			"resp.ErrParseWordBubble, InvalidWordBubble"
-// @Failure		409  {object} 		resp.StatusConflict				"resp.ErrMaxAmountOfWordBubblesReached"
-// @Failure     401  {object} 		resp.StatusUnauthorized			"resp.ErrUnauthorized, resp.ErrInvalidTokenSignature"
-// @Failure     500  {object} 		resp.StatusInternalServerError 	"resp.UnknownError"
+// @Security    ApiKeyAuth
+// @Param       Wordbubble body     model.Wordbubble true "Wordbubble containing the text to be stored"
+// @Success     200        {object} resp.PushResponse
+// @Failure     405        {object} resp.StatusMethodNotAllowed    "resp.ErrInvalidHttpMethod"
+// @Failure     400        {object} resp.StatusBadRequest          "resp.ErrParseWordbubble, InvalidWordbubble"
+// @Failure     409        {object} resp.StatusConflict            "resp.ErrMaxAmountOfWordbubblesReached"
+// @Failure     401        {object} resp.StatusUnauthorized        "resp.ErrUnauthorized, resp.ErrInvalidTokenSignature"
+// @Failure     500        {object} resp.StatusInternalServerError "resp.UnknownError"
 // @Router      /push [post]
 func (wb *app) Push(w http.ResponseWriter, r *http.Request) {
-	// TODO make an official response for invalid wordbubbl
 	if r.Method != http.MethodPost {
 		wb.errorResponse(resp.ErrInvalidHttpMethod, w)
 		return
@@ -45,17 +44,20 @@ func (wb *app) Push(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var wordbubble model.WordBubble // finally we are authenticated! Let's insert a wordbubble
+	var wordbubble model.Wordbubble // finally we are authenticated! Let's insert a wordbubble
 	if err = json.NewDecoder(r.Body).Decode(&wordbubble); err != nil {
-		wb.errorResponse(resp.ErrParseWordBubble, w)
+		wb.errorResponse(resp.ErrParseWordbubble, w)
 		return
 	}
 
-	err = wb.wordbubbles.AddNewWordBubble(userId, &wordbubble)
+	err = wb.wordbubbles.AddNewWordbubble(userId, &wordbubble)
 	if err != nil {
 		wb.errorResponse(err, w)
 		return
 	}
+	resp := &resp.PushResponse{
+		Text: "thank you!",
+	}
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("thank you!"))
+	json.NewEncoder(w).Encode(resp)
 }
