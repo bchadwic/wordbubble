@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/bchadwic/wordbubble/model"
-	"github.com/bchadwic/wordbubble/resp"
+	"github.com/bchadwic/wordbubble/model/req"
+	"github.com/bchadwic/wordbubble/model/resp"
 )
 
 // Login is used to get the access and refresh token for a user's credentials
@@ -14,7 +14,7 @@ import (
 // @Tags        auth
 // @Accept      json
 // @Produce     json
-// @Param       User body     model.LoginUser                true "Credentials used to authenticate a user"
+// @Param       User body     req.LoginUser                true "Credentials used to authenticate a user"
 // @Success     200  {object} resp.TokenResponse             "Valid access and refresh tokens for user"
 // @Failure     405  {object} resp.StatusMethodNotAllowed    "resp.ErrInvalidHttpMethod"
 // @Failure     400  {object} resp.StatusBadRequest          "resp.ErrParseUser, resp.ErrUnknownUser, resp.ErrCouldNotDetermineUserType"
@@ -27,7 +27,7 @@ func (wb *app) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var user model.LoginUser
+	var user req.LoginUser
 	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
 		wb.errorResponse(resp.ErrParseUser, w)
 		return

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	cfg "github.com/bchadwic/wordbubble/internal/config"
-	"github.com/bchadwic/wordbubble/resp"
+	"github.com/bchadwic/wordbubble/model/resp"
 	"github.com/bchadwic/wordbubble/util"
 	"github.com/golang-jwt/jwt"
 	"github.com/stretchr/testify/assert"

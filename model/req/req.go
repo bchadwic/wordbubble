@@ -1,10 +1,11 @@
-package model
+package req
 
-type User struct {
-	Id       int64
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
+type Wordbubble struct {
+	Text string `json:"text" example:"Hello world, this is just an example of a wordbubble"`
+}
+
+type RefreshToken struct {
+	Token string `json:"refresh_token"`
 }
 
 // @Description PopUser is the param sent to the /pop operation

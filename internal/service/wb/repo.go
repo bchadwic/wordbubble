@@ -4,8 +4,8 @@ import (
 	"database/sql"
 
 	cfg "github.com/bchadwic/wordbubble/internal/config"
-	"github.com/bchadwic/wordbubble/model"
-	"github.com/bchadwic/wordbubble/resp"
+	"github.com/bchadwic/wordbubble/model/req"
+	"github.com/bchadwic/wordbubble/model/resp"
 	"github.com/bchadwic/wordbubble/util"
 )
 
@@ -21,7 +21,7 @@ func NewWordbubbleRepo(config cfg.Config) *wordBubbleRepo {
 	}
 }
 
-func (repo *wordBubbleRepo) addNewWordbubble(userId int64, wb *model.Wordbubble) error {
+func (repo *wordBubbleRepo) addNewWordbubble(userId int64, wb *req.Wordbubble) error {
 	rs, err := repo.db.Exec(AddNewWordbubble, userId, wb.Text, userId, maxAmountOfWordbubbles)
 	if err != nil {
 		repo.log.Error("execute error for adding a wordbubble %+v for user: %d, error: %s", wb, userId, err)
@@ -34,9 +34,9 @@ func (repo *wordBubbleRepo) addNewWordbubble(userId int64, wb *model.Wordbubble)
 	return nil
 }
 
-func (repo *wordBubbleRepo) removeAndReturnLatestWordbubbleForUserId(userId int64) *model.Wordbubble {
+func (repo *wordBubbleRepo) removeAndReturnLatestWordbubbleForUserId(userId int64) *req.Wordbubble {
 	row := repo.db.QueryRow(RemoveAndReturnLatestWordbubbleForUserId, userId)
-	var wordbubble model.Wordbubble
+	var wordbubble req.Wordbubble
 	if err := row.Scan(&wordbubble.Text); err != nil {
 		repo.log.Error("could not map db wordbubble text for user: %d, error: %s", userId, err)
 		return nil

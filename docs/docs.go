@@ -44,7 +44,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.LoginUser"
+                            "$ref": "#/definitions/model/req.LoginUser"
                         }
                     }
                 ],
@@ -52,31 +52,31 @@ const docTemplate = `{
                     "200": {
                         "description": "Valid access and refresh tokens for user",
                         "schema": {
-                            "$ref": "#/definitions/resp.TokenResponse"
+                            "$ref": "#/definitions/model/resp.TokenResponse"
                         }
                     },
                     "400": {
                         "description": "resp.ErrParseUser, resp.ErrUnknownUser, resp.ErrCouldNotDetermineUserType",
                         "schema": {
-                            "$ref": "#/definitions/resp.StatusBadRequest"
+                            "$ref": "#/definitions/model/resp.StatusBadRequest"
                         }
                     },
                     "401": {
                         "description": "resp.ErrInvalidCredentials",
                         "schema": {
-                            "$ref": "#/definitions/resp.StatusUnauthorized"
+                            "$ref": "#/definitions/model/resp.StatusUnauthorized"
                         }
                     },
                     "405": {
                         "description": "resp.ErrInvalidHttpMethod",
                         "schema": {
-                            "$ref": "#/definitions/resp.StatusMethodNotAllowed"
+                            "$ref": "#/definitions/model/resp.StatusMethodNotAllowed"
                         }
                     },
                     "500": {
                         "description": "resp.ErrSQLMappingError, resp.ErrCouldNotStoreRefreshToken",
                         "schema": {
-                            "$ref": "#/definitions/resp.StatusInternalServerError"
+                            "$ref": "#/definitions/model/resp.StatusInternalServerError"
                         }
                     }
                 }
@@ -102,7 +102,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.PopUser"
+                            "$ref": "#/definitions/model/req.PopUser"
                         }
                     }
                 ],
@@ -110,37 +110,37 @@ const docTemplate = `{
                     "200": {
                         "description": "Latest Wordbubble for user passed",
                         "schema": {
-                            "$ref": "#/definitions/model.Wordbubble"
+                            "$ref": "#/definitions/model/req.Wordbubble"
                         }
                     },
                     "201": {
                         "description": "resp.ErrNoWordbubble",
                         "schema": {
-                            "$ref": "#/definitions/resp.StatusNoContent"
+                            "$ref": "#/definitions/model/resp.StatusNoContent"
                         }
                     },
                     "400": {
                         "description": "resp.ErrParseUser, resp.ErrUnknownUser, resp.ErrCouldNotDetermineUserType",
                         "schema": {
-                            "$ref": "#/definitions/resp.StatusBadRequest"
+                            "$ref": "#/definitions/model/resp.StatusBadRequest"
                         }
                     },
                     "401": {
                         "description": "resp.ErrInvalidCredentials",
                         "schema": {
-                            "$ref": "#/definitions/resp.StatusUnauthorized"
+                            "$ref": "#/definitions/model/resp.StatusUnauthorized"
                         }
                     },
                     "405": {
                         "description": "resp.ErrInvalidHttpMethod",
                         "schema": {
-                            "$ref": "#/definitions/resp.StatusMethodNotAllowed"
+                            "$ref": "#/definitions/model/resp.StatusMethodNotAllowed"
                         }
                     },
                     "500": {
                         "description": "resp.ErrSQLMappingError, resp.ErrCouldNotStoreRefreshToken",
                         "schema": {
-                            "$ref": "#/definitions/resp.StatusInternalServerError"
+                            "$ref": "#/definitions/model/resp.StatusInternalServerError"
                         }
                     }
                 }
@@ -171,7 +171,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.Wordbubble"
+                            "$ref": "#/definitions/model/req.Wordbubble"
                         }
                     }
                 ],
@@ -179,37 +179,37 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/resp.PushResponse"
+                            "$ref": "#/definitions/model/resp.PushResponse"
                         }
                     },
                     "400": {
                         "description": "resp.ErrParseWordbubble, InvalidWordbubble",
                         "schema": {
-                            "$ref": "#/definitions/resp.StatusBadRequest"
+                            "$ref": "#/definitions/model/resp.StatusBadRequest"
                         }
                     },
                     "401": {
                         "description": "resp.ErrUnauthorized, resp.ErrInvalidTokenSignature",
                         "schema": {
-                            "$ref": "#/definitions/resp.StatusUnauthorized"
+                            "$ref": "#/definitions/model/resp.StatusUnauthorized"
                         }
                     },
                     "405": {
                         "description": "resp.ErrInvalidHttpMethod",
                         "schema": {
-                            "$ref": "#/definitions/resp.StatusMethodNotAllowed"
+                            "$ref": "#/definitions/model/resp.StatusMethodNotAllowed"
                         }
                     },
                     "409": {
                         "description": "resp.ErrMaxAmountOfWordbubblesReached",
                         "schema": {
-                            "$ref": "#/definitions/resp.StatusConflict"
+                            "$ref": "#/definitions/model/resp.StatusConflict"
                         }
                     },
                     "500": {
                         "description": "resp.UnknownError",
                         "schema": {
-                            "$ref": "#/definitions/resp.StatusInternalServerError"
+                            "$ref": "#/definitions/model/resp.StatusInternalServerError"
                         }
                     }
                 }
@@ -235,7 +235,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.SignupUser"
+                            "$ref": "#/definitions/model/req.SignupUser"
                         }
                     }
                 ],
@@ -243,25 +243,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/resp.TokenResponse"
+                            "$ref": "#/definitions/model/resp.TokenResponse"
                         }
                     },
                     "400": {
                         "description": "resp.ErrParseUser, resp.ErrEmailIsNotValid, resp.ErrEmailIsTooLong, resp.ErrUsernameIsTooLong, resp.ErrUsernameIsNotLongEnough, resp.ErrUsernameInvalidChars, resp.ErrUserWithUsernameAlreadyExists, resp.ErrUserWithEmailAlreadyExists, resp.ErrCouldNotDetermineUserExistence, InvalidPassword",
                         "schema": {
-                            "$ref": "#/definitions/resp.StatusBadRequest"
+                            "$ref": "#/definitions/model/resp.StatusBadRequest"
                         }
                     },
                     "405": {
                         "description": "resp.ErrInvalidHttpMethod",
                         "schema": {
-                            "$ref": "#/definitions/resp.StatusMethodNotAllowed"
+                            "$ref": "#/definitions/model/resp.StatusMethodNotAllowed"
                         }
                     },
                     "500": {
                         "description": "resp.ErrCouldNotBeHashPassword, resp.ErrCouldNotAddUser, resp.ErrCouldNotStoreRefreshToken",
                         "schema": {
-                            "$ref": "#/definitions/resp.StatusInternalServerError"
+                            "$ref": "#/definitions/model/resp.StatusInternalServerError"
                         }
                     }
                 }
@@ -287,7 +287,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.RefreshToken"
+                            "$ref": "#/definitions/model/req.RefreshToken"
                         }
                     }
                 ],
@@ -295,31 +295,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/resp.TokenResponse"
+                            "$ref": "#/definitions/model/resp.TokenResponse"
                         }
                     },
                     "400": {
                         "description": "resp.ErrParseRefreshToken",
                         "schema": {
-                            "$ref": "#/definitions/resp.StatusBadRequest"
+                            "$ref": "#/definitions/model/resp.StatusBadRequest"
                         }
                     },
                     "401": {
                         "description": "resp.ErrRefreshTokenIsExpired, resp.ErrCouldNotValidateRefreshToken",
                         "schema": {
-                            "$ref": "#/definitions/resp.StatusUnauthorized"
+                            "$ref": "#/definitions/model/resp.StatusUnauthorized"
                         }
                     },
                     "405": {
                         "description": "resp.ErrInvalidHttpMethod",
                         "schema": {
-                            "$ref": "#/definitions/resp.StatusMethodNotAllowed"
+                            "$ref": "#/definitions/model/resp.StatusMethodNotAllowed"
                         }
                     },
                     "500": {
                         "description": "resp.ErrCouldNotStoreRefreshToken",
                         "schema": {
-                            "$ref": "#/definitions/resp.StatusMethodNotAllowed"
+                            "$ref": "#/definitions/model/resp.StatusMethodNotAllowed"
                         }
                     }
                 }
@@ -327,7 +327,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "model.LoginUser": {
+        "req.LoginUser": {
             "description": "LoginUser is the body sent to the /login operation",
             "type": "object",
             "properties": {
@@ -341,7 +341,7 @@ const docTemplate = `{
                 }
             }
         },
-        "model.PopUser": {
+        "req.PopUser": {
             "description": "PopUser is the param sent to the /pop operation",
             "type": "object",
             "properties": {
@@ -351,7 +351,7 @@ const docTemplate = `{
                 }
             }
         },
-        "model.RefreshToken": {
+        "req.RefreshToken": {
             "type": "object",
             "properties": {
                 "refresh_token": {
@@ -359,7 +359,7 @@ const docTemplate = `{
                 }
             }
         },
-        "model.SignupUser": {
+        "req.SignupUser": {
             "description": "SignupUser is the body sent to the /signup operation",
             "type": "object",
             "properties": {
@@ -374,7 +374,7 @@ const docTemplate = `{
                 }
             }
         },
-        "model.Wordbubble": {
+        "req.Wordbubble": {
             "type": "object",
             "properties": {
                 "text": {

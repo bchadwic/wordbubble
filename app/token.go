@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/bchadwic/wordbubble/internal/service/auth"
-	"github.com/bchadwic/wordbubble/model"
-	"github.com/bchadwic/wordbubble/resp"
+	"github.com/bchadwic/wordbubble/model/req"
+	"github.com/bchadwic/wordbubble/model/resp"
 )
 
 // Token is used to retrieve a new access token from a refresh token
@@ -15,7 +15,7 @@ import (
 // @Tags        auth
 // @Accept      json
 // @Produce     json
-// @Param       Token body     model.RefreshToken true "Valid refresh token to gain a new access token"
+// @Param       Token body     req.RefreshToken true "Valid refresh token to gain a new access token"
 // @Success     200   {object} resp.TokenResponse
 // @Failure     400   {object} resp.StatusBadRequest       "resp.ErrParseRefreshToken"
 // @Failure     401   {object} resp.StatusUnauthorized     "resp.ErrRefreshTokenIsExpired, resp.ErrCouldNotValidateRefreshToken"
@@ -28,7 +28,7 @@ func (wb *app) Token(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var reqBody model.RefreshToken
+	var reqBody req.RefreshToken
 	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
 		wb.errorResponse(resp.ErrParseRefreshToken, w)
 		return

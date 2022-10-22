@@ -7,7 +7,7 @@ import (
 	"github.com/bchadwic/wordbubble/internal/service/auth"
 	"github.com/bchadwic/wordbubble/internal/service/user"
 	"github.com/bchadwic/wordbubble/internal/service/wb"
-	"github.com/bchadwic/wordbubble/resp"
+	"github.com/bchadwic/wordbubble/model/resp"
 	"github.com/bchadwic/wordbubble/util"
 )
 

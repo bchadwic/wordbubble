@@ -4,7 +4,7 @@ import (
 	"time"
 
 	cfg "github.com/bchadwic/wordbubble/internal/config"
-	"github.com/bchadwic/wordbubble/resp"
+	"github.com/bchadwic/wordbubble/model/resp"
 	"github.com/bchadwic/wordbubble/util"
 )
 

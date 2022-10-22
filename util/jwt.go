@@ -4,7 +4,7 @@ import (
 	"log"
 
 	"github.com/bchadwic/wordbubble/model"
-	"github.com/bchadwic/wordbubble/resp"
+	"github.com/bchadwic/wordbubble/model/resp"
 	"github.com/golang-jwt/jwt"
 )
 

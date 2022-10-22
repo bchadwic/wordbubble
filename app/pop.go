@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/bchadwic/wordbubble/model"
-	"github.com/bchadwic/wordbubble/resp"
+	"github.com/bchadwic/wordbubble/model/req"
+	"github.com/bchadwic/wordbubble/model/resp"
 )
 
 // Pop removes and returns a wordbubble for a user
@@ -14,8 +14,8 @@ import (
 // @Tags        wordbubble
 // @Accept      json
 // @Produce     json
-// @Param       UnauthenticatedUser body     model.PopUser                  true "Username or email that the wordbubble will come from"
-// @Success     200                 {object} model.Wordbubble               "Latest Wordbubble for user passed"
+// @Param       UnauthenticatedUser body     req.PopUser                  true "Username or email that the wordbubble will come from"
+// @Success     200                 {object} req.Wordbubble               "Latest Wordbubble for user passed"
 // @Success     201                 {object} resp.StatusNoContent           "resp.ErrNoWordbubble"
 // @Failure     405                 {object} resp.StatusMethodNotAllowed    "resp.ErrInvalidHttpMethod"
 // @Failure     400                 {object} resp.StatusBadRequest          "resp.ErrParseUser, resp.ErrUnknownUser, resp.ErrCouldNotDetermineUserType"
@@ -28,7 +28,7 @@ func (wb *app) Pop(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var reqBody model.PopUser
+	var reqBody req.PopUser
 	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
 		wb.errorResponse(resp.ErrParseUser, w)
 		return

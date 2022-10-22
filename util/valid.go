@@ -6,7 +6,8 @@ import (
 	"unicode"
 
 	"github.com/bchadwic/wordbubble/model"
-	"github.com/bchadwic/wordbubble/resp"
+	"github.com/bchadwic/wordbubble/model/req"
+	"github.com/bchadwic/wordbubble/model/resp"
 )
 
 const (
@@ -114,7 +115,7 @@ func ValidPassword(password string) error {
 	return resp.BadRequest(errStr + "and" + last)
 }
 
-func ValidWordbubble(wb *model.Wordbubble) error {
+func ValidWordbubble(wb *req.Wordbubble) error {
 	len := len(wb.Text)
 	if len < MinWordbubbleLength || len > MaxWordbubbleLength {
 		return resp.BadRequest( // InvalidWordbubble
