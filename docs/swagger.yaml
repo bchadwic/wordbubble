@@ -48,7 +48,7 @@ definitions:
     description: PushResponse contains the success text response from pushing a new
       wordbubble
     properties:
-      text:
+      message:
         example: thank you!
         type: string
     type: object

@@ -56,7 +56,7 @@ func (wb *app) Push(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	resp := &resp.PushResponse{
-		Text: "thank you!",
+		Message: "thank you!",
 	}
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(resp)
