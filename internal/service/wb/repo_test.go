@@ -20,13 +20,13 @@ func Test_HappyPath(t *testing.T) {
 	}
 	// A user creates the max amount of wordbubbles
 	for i := 0; i < maxAmountOfWordbubbles; i++ {
-		err = repo.addNewWordbubble(1, &req.Wordbubble{
+		err = repo.addNewWordbubble(1, &req.WordbubbleRequest{
 			Text: fmt.Sprintf("This is wordbubble #%d", i+1),
 		})
 		assert.Nil(t, err)
 	}
 	// A user tries to add one above the max amount, causing an error to be returned
-	err = repo.addNewWordbubble(1, &req.Wordbubble{})
+	err = repo.addNewWordbubble(1, &req.WordbubbleRequest{})
 	assert.NotNil(t, err)
 	assert.Error(t, resp.ErrMaxAmountOfWordbubblesReached, err)
 	// A user wants space back so they start removing wordbubbles

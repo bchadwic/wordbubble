@@ -16,7 +16,7 @@ import (
 // @Tags        auth
 // @Accept      json
 // @Produce     json
-// @Param       User body     req.SignupUser true "User information required to signup"
+// @Param       User body     req.SignupUserRequest true "User information required to signup"
 // @Success     200  {object} resp.TokenResponse
 // @Failure     400  {object} resp.StatusBadRequest          "resp.ErrParseUser, resp.ErrEmailIsNotValid, resp.ErrEmailIsTooLong, resp.ErrUsernameIsTooLong, resp.ErrUsernameIsNotLongEnough, resp.ErrUsernameInvalidChars, resp.ErrUserWithUsernameAlreadyExists, resp.ErrUserWithEmailAlreadyExists, resp.ErrCouldNotDetermineUserExistence, InvalidPassword"
 // @Failure     405  {object} resp.StatusMethodNotAllowed    "resp.ErrInvalidHttpMethod"
@@ -28,7 +28,7 @@ func (wb *app) Signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var reqUser req.SignupUser
+	var reqUser req.SignupUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&reqUser); err != nil {
 		wb.errorResponse(resp.ErrParseUser, w)
 		return

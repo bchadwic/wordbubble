@@ -34,31 +34,37 @@ var (
 	ErrSQLMappingError                = InternalServerError("an error occurred mapping data from the database")
 )
 
+// @Description StatusNoContent - 201
 type StatusNoContent struct {
 	Code    int    `example:"201"`
 	Message string `example:"could not find a wordbubble for this user"`
 }
 
+// @Description StatusBadRequest - 400
 type StatusBadRequest struct {
 	Code    int    `example:"400"`
 	Message string `example:"could not determine if user passed is a username or an email"`
 }
 
+// @Description StatusUnauthorized - 401
 type StatusUnauthorized struct {
 	Code    int    `example:"401"`
 	Message string `example:"could not validate the refresh token, please login again"`
 }
 
+// @Description StatusMethodNotAllowed - 405
 type StatusMethodNotAllowed struct {
 	Code    int    `example:"405"`
 	Message string `example:"invalid http method"`
 }
 
+// @Description StatusConflict - 409
 type StatusConflict struct {
 	Code    int    `example:"409"`
 	Message string `example:"the max amount of wordbubbles has been created for this user"`
 }
 
+// @Description StatusInternalServerError - 500
 type StatusInternalServerError struct {
 	Code    int    `example:"500"`
 	Message string `example:"an error occurred mapping data from the database"`

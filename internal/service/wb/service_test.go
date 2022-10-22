@@ -14,21 +14,21 @@ import (
 
 func Test_AddNewWordbubble(t *testing.T) {
 	tests := map[string]struct {
-		wordbubble  *req.Wordbubble
+		wordbubble  *req.WordbubbleRequest
 		userId      int64
 		repo        WordbubbleRepo
 		expectedErr error
 	}{
 		"valid": {
 			userId: 3462,
-			wordbubble: &req.Wordbubble{
+			wordbubble: &req.WordbubbleRequest{
 				Text: "hello world",
 			},
 			repo: &testWordbubbleRepo{},
 		},
 		"invalid wordbubble text less than min bound": {
 			userId: 355,
-			wordbubble: &req.Wordbubble{
+			wordbubble: &req.WordbubbleRequest{
 				Text: strings.Repeat(".", util.MinWordbubbleLength-1),
 			},
 			repo: &testWordbubbleRepo{},
@@ -38,7 +38,7 @@ func Test_AddNewWordbubble(t *testing.T) {
 		},
 		"invalid wordbubble text greater than max bound": {
 			userId: 32,
-			wordbubble: &req.Wordbubble{
+			wordbubble: &req.WordbubbleRequest{
 				Text: strings.Repeat(".", util.MaxWordbubbleLength+1),
 			},
 			repo: &testWordbubbleRepo{},
@@ -48,7 +48,7 @@ func Test_AddNewWordbubble(t *testing.T) {
 		},
 		"invalid, database error": {
 			userId: 3612,
-			wordbubble: &req.Wordbubble{
+			wordbubble: &req.WordbubbleRequest{
 				Text: "hello world again",
 			},
 			repo: &testWordbubbleRepo{
@@ -80,7 +80,7 @@ func Test_RemoveAndReturnLatestWordbubbleForUserId(t *testing.T) {
 		"wordbubble returned": {
 			userId: 3462,
 			repo: &testWordbubbleRepo{
-				wordbubble: &req.Wordbubble{},
+				wordbubble: &req.WordbubbleRequest{},
 			},
 			expectedWordbubble: true,
 		},
@@ -104,13 +104,13 @@ func Test_RemoveAndReturnLatestWordbubbleForUserId(t *testing.T) {
 
 type testWordbubbleRepo struct {
 	err        error
-	wordbubble *req.Wordbubble
+	wordbubble *req.WordbubbleRequest
 }
 
-func (trepo *testWordbubbleRepo) addNewWordbubble(userId int64, wb *req.Wordbubble) error {
+func (trepo *testWordbubbleRepo) addNewWordbubble(userId int64, wb *req.WordbubbleRequest) error {
 	return trepo.err
 }
 
-func (trepo *testWordbubbleRepo) removeAndReturnLatestWordbubbleForUserId(userId int64) *req.Wordbubble {
+func (trepo *testWordbubbleRepo) removeAndReturnLatestWordbubbleForUserId(userId int64) *req.WordbubbleRequest {
 	return trepo.wordbubble
 }

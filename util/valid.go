@@ -115,7 +115,7 @@ func ValidPassword(password string) error {
 	return resp.BadRequest(errStr + "and" + last)
 }
 
-func ValidWordbubble(wb *req.Wordbubble) error {
+func ValidWordbubble(wb *req.WordbubbleRequest) error {
 	len := len(wb.Text)
 	if len < MinWordbubbleLength || len > MaxWordbubbleLength {
 		return resp.BadRequest( // InvalidWordbubble

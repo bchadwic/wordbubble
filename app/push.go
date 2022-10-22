@@ -17,7 +17,7 @@ import (
 // @Accept      json
 // @Produce     json
 // @Security    ApiKeyAuth
-// @Param       Wordbubble body     req.Wordbubble true "Wordbubble containing the text to be stored"
+// @Param       Wordbubble body     req.WordbubbleRequest true "Wordbubble containing the text to be stored"
 // @Success     200        {object} resp.PushResponse
 // @Failure     405        {object} resp.StatusMethodNotAllowed    "resp.ErrInvalidHttpMethod"
 // @Failure     400        {object} resp.StatusBadRequest          "resp.ErrParseWordbubble, InvalidWordbubble"
@@ -44,7 +44,7 @@ func (wb *app) Push(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var wordbubble req.Wordbubble // finally we are authenticated! Let's insert a wordbubble
+	var wordbubble req.WordbubbleRequest // finally we are authenticated! Let's insert a wordbubble
 	if err = json.NewDecoder(r.Body).Decode(&wordbubble); err != nil {
 		wb.errorResponse(resp.ErrParseWordbubble, w)
 		return

@@ -15,7 +15,7 @@ import (
 // @Tags        auth
 // @Accept      json
 // @Produce     json
-// @Param       Token body     req.RefreshToken true "Valid refresh token to gain a new access token"
+// @Param       Token body     req.RefreshTokenRequest true "Valid refresh token to gain a new access token"
 // @Success     200   {object} resp.TokenResponse
 // @Failure     400   {object} resp.StatusBadRequest       "resp.ErrParseRefreshToken"
 // @Failure     401   {object} resp.StatusUnauthorized     "resp.ErrRefreshTokenIsExpired, resp.ErrCouldNotValidateRefreshToken"
@@ -28,7 +28,7 @@ func (wb *app) Token(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var reqBody req.RefreshToken
+	var reqBody req.RefreshTokenRequest
 	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
 		wb.errorResponse(resp.ErrParseRefreshToken, w)
 		return

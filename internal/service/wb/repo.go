@@ -21,7 +21,7 @@ func NewWordbubbleRepo(config cfg.Config) *wordBubbleRepo {
 	}
 }
 
-func (repo *wordBubbleRepo) addNewWordbubble(userId int64, wb *req.Wordbubble) error {
+func (repo *wordBubbleRepo) addNewWordbubble(userId int64, wb *req.WordbubbleRequest) error {
 	rs, err := repo.db.Exec(AddNewWordbubble, userId, wb.Text, userId, maxAmountOfWordbubbles)
 	if err != nil {
 		repo.log.Error("execute error for adding a wordbubble %+v for user: %d, error: %s", wb, userId, err)
@@ -34,9 +34,9 @@ func (repo *wordBubbleRepo) addNewWordbubble(userId int64, wb *req.Wordbubble) e
 	return nil
 }
 
-func (repo *wordBubbleRepo) removeAndReturnLatestWordbubbleForUserId(userId int64) *req.Wordbubble {
+func (repo *wordBubbleRepo) removeAndReturnLatestWordbubbleForUserId(userId int64) *req.WordbubbleRequest {
 	row := repo.db.QueryRow(RemoveAndReturnLatestWordbubbleForUserId, userId)
-	var wordbubble req.Wordbubble
+	var wordbubble req.WordbubbleRequest
 	if err := row.Scan(&wordbubble.Text); err != nil {
 		repo.log.Error("could not map db wordbubble text for user: %d, error: %s", userId, err)
 		return nil

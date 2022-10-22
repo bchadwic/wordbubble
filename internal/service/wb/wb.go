@@ -16,10 +16,10 @@ type WordbubbleService interface {
 	// AddNewWordbubble adds a wordbubble for the user specified
 	// error can be (400) - invalid wordbubble - resp.BadRequest,
 	// (409) resp.ErrMaxAmountOfWordbubblesReached, (500) resp.UnknownError or nil.
-	AddNewWordbubble(userId int64, wb *req.Wordbubble) error
+	AddNewWordbubble(userId int64, wb *req.WordbubbleRequest) error
 	// RemoveAndReturnLatestWordbubbleForUserId remove and returns the latest wordbubble for the user specified.
 	// *req.Wordbubble may be nil if none were found in the data source.
-	RemoveAndReturnLatestWordbubbleForUserId(userId int64) *req.Wordbubble
+	RemoveAndReturnLatestWordbubbleForUserId(userId int64) *req.WordbubbleRequest
 }
 
 // WordbubbleRepo is the interface that the
@@ -27,8 +27,8 @@ type WordbubbleService interface {
 type WordbubbleRepo interface {
 	// addNewWordbubble adds a validated wordbubble for the user specified.
 	// error can be (409) resp.ErrMaxAmountOfWordbubblesReached, (500) resp.UnknownError or nil.
-	addNewWordbubble(userId int64, wb *req.Wordbubble) error
+	addNewWordbubble(userId int64, wb *req.WordbubbleRequest) error
 	// removeAndReturnLatestWordbubbleForUserId remove and returns the latest wordbubble for the user specified, could be nil
 	// *req.Wordbubble may be nil if none were found in the data source.
-	removeAndReturnLatestWordbubbleForUserId(userId int64) *req.Wordbubble
+	removeAndReturnLatestWordbubbleForUserId(userId int64) *req.WordbubbleRequest
 }

@@ -18,13 +18,13 @@ func NewWordbubblesService(cfg cfg.Config, repo WordbubbleRepo) *wordBubbleServi
 	}
 }
 
-func (svc *wordBubbleService) AddNewWordbubble(userId int64, wb *req.Wordbubble) error {
+func (svc *wordBubbleService) AddNewWordbubble(userId int64, wb *req.WordbubbleRequest) error {
 	if err := util.ValidWordbubble(wb); err != nil {
 		return err
 	}
 	return svc.repo.addNewWordbubble(userId, wb)
 }
 
-func (svc *wordBubbleService) RemoveAndReturnLatestWordbubbleForUserId(userId int64) *req.Wordbubble {
+func (svc *wordBubbleService) RemoveAndReturnLatestWordbubbleForUserId(userId int64) *req.WordbubbleRequest {
 	return svc.repo.removeAndReturnLatestWordbubbleForUserId(userId)
 }

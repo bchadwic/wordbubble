@@ -1,3 +1,4 @@
+// model contains the data types that are used internally to the api
 package model
 
 import "github.com/golang-jwt/jwt"

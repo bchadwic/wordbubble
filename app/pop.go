@@ -14,8 +14,8 @@ import (
 // @Tags        wordbubble
 // @Accept      json
 // @Produce     json
-// @Param       UnauthenticatedUser body     req.PopUser                  true "Username or email that the wordbubble will come from"
-// @Success     200                 {object} req.Wordbubble               "Latest Wordbubble for user passed"
+// @Param       UnauthenticatedUser body     req.PopUserRequest                  true "Username or email that the wordbubble will come from"
+// @Success     200                 {object} resp.WordbubbleResponse        "Latest Wordbubble for user passed"
 // @Success     201                 {object} resp.StatusNoContent           "resp.ErrNoWordbubble"
 // @Failure     405                 {object} resp.StatusMethodNotAllowed    "resp.ErrInvalidHttpMethod"
 // @Failure     400                 {object} resp.StatusBadRequest          "resp.ErrParseUser, resp.ErrUnknownUser, resp.ErrCouldNotDetermineUserType"
@@ -28,7 +28,7 @@ func (wb *app) Pop(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var reqBody req.PopUser
+	var reqBody req.PopUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
 		wb.errorResponse(resp.ErrParseUser, w)
 		return
