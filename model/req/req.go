@@ -23,8 +23,8 @@ type SignupUserRequest struct {
 	Password string `json:"password" example:"Hello123!"`
 }
 
-// @Description LoginUser is the body sent to the /login operation
-type LoginUser struct {
+// @Description LoginUserRequest is the body sent to the /login operation
+type LoginUserRequest struct {
 	User     string `json:"user" example:"ben"`
 	Password string `json:"password" example:"SomePassword_123"`
 }

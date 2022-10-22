@@ -27,7 +27,7 @@ func (wb *app) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var user req.LoginUser
+	var user req.LoginUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
 		wb.errorResponse(resp.ErrParseUser, w)
 		return
