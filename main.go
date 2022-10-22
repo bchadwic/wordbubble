@@ -27,7 +27,7 @@ func main() {
 // @contact.email              benchadwick87@gmail.com
 // @license.name               Apache 2.0
 // @license.url                http://www.apache.org/licenses/LICENSE-2.0.html
-// @host                       https://api.wordbubble.com
+// @host                       api.wordbubble.com
 // @BasePath                   /v1
 // @securityDefinitions.apikey ApiKeyAuth
 // @tokenUrl                   https://api.wordbubble.com/token

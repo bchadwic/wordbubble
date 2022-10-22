@@ -129,7 +129,7 @@ definitions:
         example: Hello world, this is just an example of a wordbubble
         type: string
     type: object
-host: https://api.wordbubble.com
+host: api.wordbubble.com
 info:
   contact:
     email: benchadwick87@gmail.com

@@ -14,7 +14,7 @@
         },
         "version": "1.0"
     },
-    "host": "https://api.wordbubble.com",
+    "host": "api.wordbubble.com",
     "basePath": "/v1",
     "paths": {
         "/login": {
