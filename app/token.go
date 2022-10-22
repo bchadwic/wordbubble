@@ -20,7 +20,7 @@ import (
 // @Failure     400   {object} resp.StatusBadRequest       "resp.ErrParseRefreshToken"
 // @Failure     401   {object} resp.StatusUnauthorized     "resp.ErrRefreshTokenIsExpired, resp.ErrCouldNotValidateRefreshToken"
 // @Failure     405   {object} resp.StatusMethodNotAllowed "resp.ErrInvalidHttpMethod"
-// @Failure     500   {object} resp.StatusMethodNotAllowed "resp.ErrCouldNotStoreRefreshToken"
+// @Failure     500   {object} resp.StatusInternalServerError "resp.ErrCouldNotStoreRefreshToken"
 // @Router      /token [post]
 func (wb *app) Token(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {

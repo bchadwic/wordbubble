@@ -319,7 +319,7 @@ const docTemplate = `{
                     "500": {
                         "description": "resp.ErrCouldNotStoreRefreshToken",
                         "schema": {
-                            "$ref": "#/definitions/resp.StatusMethodNotAllowed"
+                            "$ref": "#/definitions/resp.StatusInternalServerError"
                         }
                     }
                 }
