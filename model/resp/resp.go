@@ -14,5 +14,5 @@ type TokenResponse struct {
 
 // @Description PushResponse contains the success text response from pushing a new wordbubble
 type PushResponse struct {
-	Text string `json:"text" example:"thank you!"`
+	Message string `json:"message" example:"thank you!"`
 }

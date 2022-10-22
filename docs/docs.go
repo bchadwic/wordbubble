@@ -393,7 +393,7 @@ const docTemplate = `{
             "description": "PushResponse contains the success text response from pushing a new wordbubble",
             "type": "object",
             "properties": {
-                "text": {
+                "message": {
                     "type": "string",
                     "example": "thank you!"
                 }
