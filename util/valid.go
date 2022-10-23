@@ -13,7 +13,7 @@ import (
 const (
 	minPasswordLength   = 6
 	maxUsernameLength   = 40
-	maxEmailLength      = 320
+	maxEmailLength      = 100
 	MinWordbubbleLength = 1
 	MaxWordbubbleLength = 255
 )
@@ -32,7 +32,7 @@ func ValidUser(user *model.User) error {
 	return nil
 }
 
-// validate that the string passed in is an email, and that it's not longer than maxEmailLength
+// ValidEmail validates that the string passed in is an email, and that it's not longer than maxEmailLength
 func ValidEmail(email string) error {
 	if _, err := mail.ParseAddress(email); err != nil {
 		return resp.ErrEmailIsNotValid
@@ -43,7 +43,7 @@ func ValidEmail(email string) error {
 	return nil
 }
 
-// validate username, shorter than maxUsernameLength, longer than "", only letters, numbers or '_'s
+// ValidUsername validates username, shorter than maxUsernameLength, longer than "", only letters, numbers or '_'s
 func ValidUsername(username string) error {
 	if len(username) > maxUsernameLength {
 		return resp.ErrUsernameIsTooLong
@@ -59,9 +59,9 @@ func ValidUsername(username string) error {
 	return nil
 }
 
-// validate password based on the 6 characters, 1 upper, 1 lower, 1 number, 1 special character
+// ValidPassword validate password based on the 6 characters, 1 upper, 1 lower, 1 number, 1 special character
 func ValidPassword(password string) error {
-	var hasMinLen, hasUpper, hasLower, hasNumber, hasSpecial bool
+	var hasMinLen, hasUpper, hasLower, hasNumber bool
 	if len(password) > minPasswordLength {
 		hasMinLen = true
 	}
@@ -73,11 +73,9 @@ func ValidPassword(password string) error {
 			hasLower = true
 		case unicode.IsNumber(c):
 			hasNumber = true
-		case unicode.IsPunct(c) || unicode.IsSymbol(c):
-			hasSpecial = true
 		}
 	}
-	if hasUpper && hasLower && hasNumber && hasSpecial {
+	if hasUpper && hasLower && hasNumber {
 		return nil
 	}
 	errStr := "password must contain "
@@ -91,7 +89,7 @@ func ValidPassword(password string) error {
 	}
 	if !hasMinLen {
 		incrementAndAppendLast()
-		last = "at least 6 characters"
+		last = fmt.Sprintf("at least %d characters", minPasswordLength)
 	}
 	if !hasUpper {
 		incrementAndAppendLast()
@@ -105,16 +103,13 @@ func ValidPassword(password string) error {
 		incrementAndAppendLast()
 		last = "one number"
 	}
-	if !hasSpecial {
-		incrementAndAppendLast()
-		last = "one special character"
-	}
 	if count == 1 {
 		return resp.BadRequest(errStr + last)
 	} // InvalidPassword
-	return resp.BadRequest(errStr + "and" + last)
+	return resp.BadRequest(errStr + "and " + last)
 }
 
+// ValidWordbubble validates a wordbubble making sure it meets size constraints
 func ValidWordbubble(wb *req.WordbubbleRequest) error {
 	len := len(wb.Text)
 	if len < MinWordbubbleLength || len > MaxWordbubbleLength {
