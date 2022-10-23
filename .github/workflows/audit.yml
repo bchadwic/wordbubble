@@ -27,3 +27,9 @@ jobs:
 
     - name: Build
       run: go build -v .
+      
+    - name: Install swaggo/swag
+      run: go install github.com/swaggo/swag/cmd/swag@latest
+    
+    - name: Check for contract changes
+      run: swag init
