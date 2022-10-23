@@ -35,7 +35,7 @@ jobs:
       run: |
         swag init
         if [[ -n $(git diff) ]]; then
-            echo Contract changes were made, run `swag init` before pushing
+            echo Contract changes were made, run "swag init" before pushing
             exit 1
         else
             echo Contract is up to date with code
