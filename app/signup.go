@@ -10,7 +10,7 @@ import (
 	"github.com/bchadwic/wordbubble/util"
 )
 
-// Signup is used to signup a new
+// Signup is used to signup a new user
 // @Summary     Signup to api.wordbubble.io
 // @Description Signup to api.wordbubble.io using a unique email and username
 // @Tags        auth
