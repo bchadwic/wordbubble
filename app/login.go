@@ -9,7 +9,7 @@ import (
 )
 
 // Login is used to get the access and refresh token for a user's credentials
-// @Summary     Login to api..io
+// @Summary     Login to api.wordbubble.io
 // @Description Login to api.wordbubble.io using the user credentials
 // @Tags        auth
 // @Accept      json
