@@ -20,7 +20,7 @@ func NewAuthRepo(config cfg.Config) *authRepo {
 	}
 }
 
-func (repo *authRepo) storeRefreshToken(token *refreshToken) error {
+func (repo *authRepo) storeRefreshToken(token *RefreshToken) error {
 	_, err := repo.db.Exec(StoreRefreshToken, token.UserId(), token.string, token.issuedAt)
 	if err != nil {
 		return resp.ErrCouldNotStoreRefreshToken
@@ -28,7 +28,7 @@ func (repo *authRepo) storeRefreshToken(token *refreshToken) error {
 	return nil
 }
 
-func (repo *authRepo) validateRefreshToken(token *refreshToken) error {
+func (repo *authRepo) validateRefreshToken(token *RefreshToken) error {
 	row := repo.db.QueryRow(ValidateRefreshToken, token.UserId(), token.string)
 	var issuedAt int64
 	if err := row.Scan(&issuedAt); err != nil {
@@ -38,14 +38,14 @@ func (repo *authRepo) validateRefreshToken(token *refreshToken) error {
 	return nil
 }
 
-func (repo *authRepo) getLatestRefreshToken(userId int64) *refreshToken {
+func (repo *authRepo) getLatestRefreshToken(userId int64) *RefreshToken {
 	row := repo.db.QueryRow(GetLatestRefreshToken, userId)
 	var issuedAt int64
 	var val string
 	if err := row.Scan(&val, &issuedAt); err != nil {
 		return nil
 	}
-	return &refreshToken{
+	return &RefreshToken{
 		string:   val,
 		issuedAt: issuedAt,
 		userId:   userId,

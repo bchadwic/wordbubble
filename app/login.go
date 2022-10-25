@@ -2,6 +2,7 @@ package app
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
 
 	"github.com/bchadwic/wordbubble/model/req"
@@ -27,9 +28,9 @@ func (wb *app) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var user req.LoginUserRequest
-	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
-		wb.errorResponse(resp.ErrParseUser, w)
+	user, err := getLoginUserFromBody(r.Body)
+	if err != nil {
+		wb.errorResponse(err, w)
 		return
 	}
 
@@ -51,4 +52,18 @@ func (wb *app) Login(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(resp)
+}
+
+func getLoginUserFromBody(body io.Reader) (*req.LoginUserRequest, error) {
+	var user req.LoginUserRequest
+	if err := json.NewDecoder(body).Decode(&user); err != nil {
+		return nil, resp.ErrParseUser
+	}
+	if user.User == "" {
+		return nil, resp.ErrNoUser
+	}
+	if user.Password == "" {
+		return nil, resp.ErrNoPassword
+	}
+	return &user, nil
 }

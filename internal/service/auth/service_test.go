@@ -17,7 +17,7 @@ func Test_GenerateAccessToken(t *testing.T) {
 		userId int64
 	}{
 		"valid": {
-			timer:  util.Unix(0),
+			timer:  util.TestTimerFromUnix(0),
 			userId: 245,
 		},
 	}
@@ -43,14 +43,14 @@ func Test_GenerateRefreshToken(t *testing.T) {
 		wantsErr bool
 	}{
 		"valid": {
-			timer: util.Unix(0),
+			timer: util.TestTimerFromUnix(0),
 			repo: &testAuthRepo{
-				refreshToken: &refreshToken{string: "hi"},
+				refreshToken: &RefreshToken{string: "hi"},
 			},
 			userId: 96,
 		},
 		"error from database": {
-			timer: util.Unix(0),
+			timer: util.TestTimerFromUnix(0),
 			repo: &testAuthRepo{
 				err: resp.InternalServerError("boom"),
 			},
@@ -84,56 +84,56 @@ func Test_ValidateRefreshToken(t *testing.T) {
 	tests := map[string]struct {
 		timer        util.Timer
 		repo         AuthRepo
-		refreshToken *refreshToken
+		refreshToken *RefreshToken
 		expectedErr  error
 		expectedEOL  bool
 	}{
 		"valid": {
-			timer: util.Unix(0),
+			timer: util.TestTimerFromUnix(0),
 			repo:  &testAuthRepo{},
-			refreshToken: &refreshToken{
+			refreshToken: &RefreshToken{
 				issuedAt: 2,
 			},
 		},
 		"error from database": {
-			timer: util.Unix(0),
+			timer: util.TestTimerFromUnix(0),
 			repo: &testAuthRepo{
 				err: resp.ErrCouldNotValidateRefreshToken,
 			},
-			refreshToken: &refreshToken{
+			refreshToken: &RefreshToken{
 				issuedAt: 2,
 			},
 			expectedErr: resp.ErrCouldNotValidateRefreshToken,
 		},
 		"error expired": {
-			timer: util.Unix(refreshTokenTimeLimit + 30),
+			timer: util.TestTimerFromUnix(refreshTokenTimeLimit + 30),
 			repo:  &testAuthRepo{},
-			refreshToken: &refreshToken{
+			refreshToken: &RefreshToken{
 				issuedAt: 30,
 			},
 			expectedErr: resp.ErrRefreshTokenIsExpired,
 			expectedEOL: true,
 		},
 		"no error but close to EOL": {
-			timer: util.Unix(refreshTokenTimeLimit + 30),
+			timer: util.TestTimerFromUnix(refreshTokenTimeLimit + 30),
 			repo:  &testAuthRepo{},
-			refreshToken: &refreshToken{
+			refreshToken: &RefreshToken{
 				issuedAt: refreshTokenTimeLimit*.1 + 30,
 			},
 			expectedEOL: true,
 		},
 		"valid almost but not at EOL": {
-			timer: util.Unix(refreshTokenTimeLimit + 30),
+			timer: util.TestTimerFromUnix(refreshTokenTimeLimit + 30),
 			repo:  &testAuthRepo{},
-			refreshToken: &refreshToken{
+			refreshToken: &RefreshToken{
 				issuedAt: refreshTokenTimeLimit*.2 + 30,
 			},
 			expectedEOL: false,
 		},
 		"valid almost expired": {
-			timer: util.Unix(refreshTokenTimeLimit + 30),
+			timer: util.TestTimerFromUnix(refreshTokenTimeLimit + 30),
 			repo:  &testAuthRepo{},
-			refreshToken: &refreshToken{
+			refreshToken: &RefreshToken{
 				issuedAt: 31,
 			},
 			expectedEOL: true,
@@ -170,17 +170,17 @@ func Test_TokenFuncs(t *testing.T) {
 
 type testAuthRepo struct {
 	err          error
-	refreshToken *refreshToken
+	refreshToken *RefreshToken
 }
 
-func (trepo *testAuthRepo) storeRefreshToken(token *refreshToken) error {
+func (trepo *testAuthRepo) storeRefreshToken(token *RefreshToken) error {
 	return trepo.err
 }
 
-func (trepo *testAuthRepo) validateRefreshToken(token *refreshToken) error {
+func (trepo *testAuthRepo) validateRefreshToken(token *RefreshToken) error {
 	return trepo.err
 }
 
-func (trepo *testAuthRepo) getLatestRefreshToken(userId int64) *refreshToken {
+func (trepo *testAuthRepo) getLatestRefreshToken(userId int64) *RefreshToken {
 	return trepo.refreshToken
 }

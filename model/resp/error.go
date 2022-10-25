@@ -11,6 +11,8 @@ var (
 	ErrParseUser                      = BadRequest("could not parse user from request body")
 	ErrParseRefreshToken              = BadRequest("could not parse refresh token from request body")
 	ErrCouldNotDetermineUserType      = BadRequest("could not determine if user passed is a username or an email")
+	ErrNoUser                         = BadRequest("no username or email was specified")
+	ErrNoPassword                     = BadRequest("no password was specified for user")
 	ErrUnknownUser                    = BadRequest("could not find user")
 	ErrUserWithUsernameAlreadyExists  = BadRequest("a user already exists with this username")
 	ErrUserWithEmailAlreadyExists     = BadRequest("a user already exists with this email")
