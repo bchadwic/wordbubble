@@ -80,7 +80,7 @@ func Test_RemoveAndReturnLatestWordbubbleForUserId(t *testing.T) {
 		"wordbubble returned": {
 			userId: 3462,
 			repo: &testWordbubbleRepo{
-				wordbubble: &req.WordbubbleRequest{},
+				wordbubble: &resp.WordbubbleResponse{},
 			},
 			expectedWordbubble: true,
 		},
@@ -104,13 +104,13 @@ func Test_RemoveAndReturnLatestWordbubbleForUserId(t *testing.T) {
 
 type testWordbubbleRepo struct {
 	err        error
-	wordbubble *req.WordbubbleRequest
+	wordbubble *resp.WordbubbleResponse
 }
 
 func (trepo *testWordbubbleRepo) addNewWordbubble(userId int64, wb *req.WordbubbleRequest) error {
 	return trepo.err
 }
 
-func (trepo *testWordbubbleRepo) removeAndReturnLatestWordbubbleForUserId(userId int64) *req.WordbubbleRequest {
+func (trepo *testWordbubbleRepo) removeAndReturnLatestWordbubbleForUserId(userId int64) *resp.WordbubbleResponse {
 	return trepo.wordbubble
 }

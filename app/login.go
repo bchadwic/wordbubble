@@ -18,7 +18,7 @@ import (
 // @Param       User body     req.LoginUserRequest                true "Credentials used to authenticate a user"
 // @Success     200  {object} resp.TokenResponse             "Valid access and refresh tokens for user"
 // @Failure     405  {object} resp.StatusMethodNotAllowed    "resp.ErrInvalidHttpMethod"
-// @Failure     400  {object} resp.StatusBadRequest          "resp.ErrParseUser, resp.ErrUnknownUser, resp.ErrCouldNotDetermineUserType"
+// @Failure     400  {object} resp.StatusBadRequest          "resp.ErrParseUser, resp.ErrNoPassword, resp.ErrNoUser, resp.ErrUnknownUser, resp.ErrCouldNotDetermineUserType"
 // @Failure     401  {object} resp.StatusUnauthorized        "resp.ErrInvalidCredentials"
 // @Failure     500  {object} resp.StatusInternalServerError "resp.ErrSQLMappingError, resp.ErrCouldNotStoreRefreshToken"
 // @Router      /login [post]

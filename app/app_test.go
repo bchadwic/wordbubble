@@ -5,6 +5,8 @@ import (
 
 	"github.com/bchadwic/wordbubble/internal/service/auth"
 	"github.com/bchadwic/wordbubble/model"
+	"github.com/bchadwic/wordbubble/model/req"
+	"github.com/bchadwic/wordbubble/model/resp"
 	"github.com/bchadwic/wordbubble/util"
 )
 
@@ -71,4 +73,17 @@ func (tus *TestUserService) RetrieveUnauthenticatedUser(userStr string) (*model.
 
 func (tus *TestUserService) RetrieveAuthenticatedUser(userStr, password string) (*model.User, error) {
 	return tus.RetrieveAuthenticatedUserUser, tus.RetrieveAuthenticatedUserError
+}
+
+type TestWordbubbleService struct {
+	AddNewWordbubbleError                              error
+	RemoveAndReturnLatestWordbubbleForUserIdWordbubble *resp.WordbubbleResponse
+}
+
+func (tws *TestWordbubbleService) AddNewWordbubble(userId int64, wb *req.WordbubbleRequest) error {
+	return tws.AddNewWordbubbleError
+}
+
+func (tws *TestWordbubbleService) RemoveAndReturnLatestWordbubbleForUserId(userId int64) *resp.WordbubbleResponse {
+	return tws.RemoveAndReturnLatestWordbubbleForUserIdWordbubble
 }
