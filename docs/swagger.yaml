@@ -327,7 +327,7 @@ paths:
           schema:
             $ref: '#/definitions/resp.StatusBadRequest'
         "401":
-          description: resp.ErrRefreshTokenIsExpired, resp.ErrCouldNotValidateRefreshToken
+          description: resp.ErrTokenIsExpired, resp.ErrCouldNotValidateRefreshToken
           schema:
             $ref: '#/definitions/resp.StatusUnauthorized'
         "405":

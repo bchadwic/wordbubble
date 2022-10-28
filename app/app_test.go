@@ -1,6 +1,7 @@
 package app
 
 import (
+	"io"
 	"net/http"
 
 	"github.com/bchadwic/wordbubble/internal/service/auth"
@@ -14,6 +15,19 @@ func NewTestApp() *app {
 	return &app{
 		log: util.TestLogger(),
 	}
+}
+
+type TestCase struct {
+	reqBody   io.Reader
+	reqMethod string
+	reqHeader http.Header
+
+	respBody       string
+	respStatusCode int
+
+	userService       *TestUserService
+	wordbubbleService *TestWordbubbleService
+	authService       *TestAuthService
 }
 
 type TestWriter struct {

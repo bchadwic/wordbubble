@@ -2,7 +2,6 @@ package app
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 	"strings"
 	"testing"
@@ -13,19 +12,12 @@ import (
 )
 
 func Test_Login(t *testing.T) {
-	tests := map[string]struct {
-		body             io.Reader
-		method           string
-		wantedBody       string
-		wantedStatusCode int
-		authService      *TestAuthService
-		userService      *TestUserService
-	}{
+	tests := map[string]TestCase{
 		"valid": {
-			body:             strings.NewReader(`{"user":"ben","password":"SomePassword123"}`),
-			wantedBody:       fmt.Sprintln(`{"access_token":"test.access.token","refresh_token":"test.refresh.token"}`),
-			wantedStatusCode: http.StatusOK,
-			method:           http.MethodPost,
+			reqBody:        strings.NewReader(`{"user":"ben","password":"SomePassword123"}`),
+			respBody:       fmt.Sprintln(`{"access_token":"test.access.token","refresh_token":"test.refresh.token"}`),
+			respStatusCode: http.StatusOK,
+			reqMethod:      http.MethodPost,
 			userService: &TestUserService{
 				RetrieveAuthenticatedUserUser: &model.User{},
 			},
@@ -35,10 +27,10 @@ func Test_Login(t *testing.T) {
 			},
 		},
 		"invalid, auth service couldn't store a refresh token ": {
-			body:             strings.NewReader(`{"user":"ben","password":"SomePassword123"}`),
-			wantedBody:       resp.ErrCouldNotStoreRefreshToken.Message,
-			wantedStatusCode: resp.ErrCouldNotStoreRefreshToken.Code,
-			method:           http.MethodPost,
+			reqBody:        strings.NewReader(`{"user":"ben","password":"SomePassword123"}`),
+			respBody:       resp.ErrCouldNotStoreRefreshToken.Message,
+			respStatusCode: resp.ErrCouldNotStoreRefreshToken.Code,
+			reqMethod:      http.MethodPost,
 			userService: &TestUserService{
 				RetrieveAuthenticatedUserUser: &model.User{},
 			},
@@ -47,41 +39,41 @@ func Test_Login(t *testing.T) {
 			},
 		},
 		"invalid, user service couldn't find user": {
-			body:             strings.NewReader(`{"user":"*234olj2kx.s","password":"SomePassword123"}`),
-			wantedBody:       resp.ErrCouldNotDetermineUserType.Message,
-			wantedStatusCode: resp.ErrCouldNotDetermineUserType.Code,
-			method:           http.MethodPost,
+			reqBody:        strings.NewReader(`{"user":"*234olj2kx.s","password":"SomePassword123"}`),
+			respBody:       resp.ErrCouldNotDetermineUserType.Message,
+			respStatusCode: resp.ErrCouldNotDetermineUserType.Code,
+			reqMethod:      http.MethodPost,
 			userService: &TestUserService{
 				RetrieveAuthenticatedUserError: resp.ErrCouldNotDetermineUserType,
 			},
 		},
 		"invalid, missing password": {
-			body:             strings.NewReader(`{"user":"ben"}`),
-			wantedBody:       resp.ErrNoPassword.Message,
-			wantedStatusCode: resp.ErrNoPassword.Code,
-			method:           http.MethodPost,
+			reqBody:        strings.NewReader(`{"user":"ben"}`),
+			respBody:       resp.ErrNoPassword.Message,
+			respStatusCode: resp.ErrNoPassword.Code,
+			reqMethod:      http.MethodPost,
 		},
 		"invalid, missing user": {
-			body:             strings.NewReader(`{"password":"SomePassword123"}`),
-			wantedBody:       resp.ErrNoUser.Message,
-			wantedStatusCode: resp.ErrNoUser.Code,
-			method:           http.MethodPost,
+			reqBody:        strings.NewReader(`{"password":"SomePassword123"}`),
+			respBody:       resp.ErrNoUser.Message,
+			respStatusCode: resp.ErrNoUser.Code,
+			reqMethod:      http.MethodPost,
 		},
 		"invalid, bad body": {
-			body:             strings.NewReader(`howdy!`),
-			wantedBody:       resp.ErrParseUser.Message,
-			wantedStatusCode: resp.ErrParseUser.Code,
-			method:           http.MethodPost,
+			reqBody:        strings.NewReader(`howdy!`),
+			respBody:       resp.ErrParseUser.Message,
+			respStatusCode: resp.ErrParseUser.Code,
+			reqMethod:      http.MethodPost,
 		},
 		"invalid, GET http method": {
-			wantedBody:       resp.ErrInvalidHttpMethod.Message,
-			wantedStatusCode: resp.ErrInvalidHttpMethod.Code,
-			method:           http.MethodGet,
+			respBody:       resp.ErrInvalidHttpMethod.Message,
+			respStatusCode: resp.ErrInvalidHttpMethod.Code,
+			reqMethod:      http.MethodGet,
 		},
 	}
 	for tname, tcase := range tests {
 		t.Run(tname, func(t *testing.T) {
-			req, err := http.NewRequest(tcase.method, "/login", tcase.body)
+			req, err := http.NewRequest(tcase.reqMethod, "/v1/login", tcase.reqBody)
 			if err != nil {
 				panic(err)
 			}
@@ -90,8 +82,8 @@ func Test_Login(t *testing.T) {
 			testApp.users = tcase.userService
 			w := &TestWriter{}
 			testApp.Login(w, req)
-			assert.Equal(t, tcase.wantedBody, w.respBody)
-			assert.Equal(t, tcase.wantedStatusCode, w.statusCode)
+			assert.Equal(t, tcase.respBody, w.respBody)
+			assert.Equal(t, tcase.respStatusCode, w.statusCode)
 		})
 	}
 }

@@ -111,7 +111,7 @@ func Test_ValidateRefreshToken(t *testing.T) {
 			refreshToken: &RefreshToken{
 				issuedAt: 30,
 			},
-			expectedErr: resp.ErrRefreshTokenIsExpired,
+			expectedErr: resp.ErrTokenIsExpired,
 			expectedEOL: true,
 		},
 		"no error but close to EOL": {

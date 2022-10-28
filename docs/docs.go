@@ -305,7 +305,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "resp.ErrRefreshTokenIsExpired, resp.ErrCouldNotValidateRefreshToken",
+                        "description": "resp.ErrTokenIsExpired, resp.ErrCouldNotValidateRefreshToken",
                         "schema": {
                             "$ref": "#/definitions/resp.StatusUnauthorized"
                         }

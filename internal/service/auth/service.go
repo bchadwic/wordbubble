@@ -60,7 +60,7 @@ func (svc *authService) checkRefreshTokenExpiry(token *RefreshToken) error {
 	if timeLeft := refreshTokenTimeLimit - (svc.timer.Now().Unix() - token.issuedAt); timeLeft < ImminentExpirationWindow {
 		token.nearEOL = true
 		if timeLeft <= 0 {
-			return resp.ErrRefreshTokenIsExpired
+			return resp.ErrTokenIsExpired
 		}
 	}
 	return nil

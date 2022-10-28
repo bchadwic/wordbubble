@@ -25,7 +25,7 @@ type AuthService interface {
 	// error could be (500) resp.ErrCouldNotStoreRefreshToken or nil.
 	GenerateRefreshToken(userId int64) (string, error)
 	// ValidateRefreshToken validates the refresh token string passed using the signing key and by checking the auth datasource
-	// error could be (401) ErrRefreshTokenIsExpired, (401) resp.ErrCouldNotValidateRefreshToken or nil.
+	// error could be (401) ErrTokenIsExpired, (401) resp.ErrCouldNotValidateRefreshToken or nil.
 	ValidateRefreshToken(token *RefreshToken) error
 }
 

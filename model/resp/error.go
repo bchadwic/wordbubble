@@ -24,7 +24,7 @@ var (
 	ErrUnauthorized                   = Unauthorized("bearer token authorization is required for this operation")
 	ErrInvalidCredentials             = Unauthorized("could not authenticate using credentials passed")
 	ErrCouldNotValidateRefreshToken   = Unauthorized("could not validate the refresh token, please login again")
-	ErrRefreshTokenIsExpired          = Unauthorized("refresh token is expired, please login again")
+	ErrTokenIsExpired                 = Unauthorized("token is expired, please login again")
 	ErrInvalidTokenSignature          = Unauthorized("token signature was found to be invalid")
 	ErrInvalidHttpMethod              = MethodNotAllowed("invalid http method")
 	ErrMaxAmountOfWordbubblesReached  = Conflict("the max amount of wordbubbles has been created for this user")
