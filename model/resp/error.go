@@ -19,7 +19,7 @@ var (
 	ErrEmailIsNotValid                = BadRequest("email in request is not a valid email")
 	ErrEmailIsTooLong                 = BadRequest("no one should have an email this long")
 	ErrUsernameIsTooLong              = BadRequest("no one should have a username this long")
-	ErrUsernameIsNotLongEnough        = BadRequest("a username is required")
+	ErrUsernameIsMissing              = BadRequest("a username is required")
 	ErrUsernameInvalidChars           = BadRequest("username must only consist of letters, numbers, or '_'")
 	ErrUnauthorized                   = Unauthorized("bearer token authorization is required for this operation")
 	ErrInvalidCredentials             = Unauthorized("could not authenticate using credentials passed")

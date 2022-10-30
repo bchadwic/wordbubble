@@ -8,7 +8,6 @@ import (
 
 	"github.com/bchadwic/wordbubble/model"
 	"github.com/bchadwic/wordbubble/model/resp"
-	"github.com/stretchr/testify/assert"
 )
 
 func Test_Login(t *testing.T) {
@@ -73,17 +72,9 @@ func Test_Login(t *testing.T) {
 	}
 	for tname, tcase := range tests {
 		t.Run(tname, func(t *testing.T) {
-			req, err := http.NewRequest(tcase.reqMethod, "/v1/login", tcase.reqBody)
-			if err != nil {
-				panic(err)
-			}
-			testApp := NewTestApp()
-			testApp.auth = tcase.authService
-			testApp.users = tcase.userService
-			w := &TestWriter{}
-			testApp.Login(w, req)
-			assert.Equal(t, tcase.respBody, w.respBody)
-			assert.Equal(t, tcase.respStatusCode, w.statusCode)
+			tcase.testApp = NewTestApp()
+			tcase.operation = tcase.testApp.Login
+			tcase.HttpRequestTest(t)
 		})
 	}
 }

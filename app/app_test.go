@@ -3,13 +3,30 @@ package app
 import (
 	"io"
 	"net/http"
+	"testing"
 
 	"github.com/bchadwic/wordbubble/internal/service/auth"
 	"github.com/bchadwic/wordbubble/model"
 	"github.com/bchadwic/wordbubble/model/req"
 	"github.com/bchadwic/wordbubble/model/resp"
 	"github.com/bchadwic/wordbubble/util"
+	"github.com/stretchr/testify/assert"
 )
+
+func (tcase *TestCase) HttpRequestTest(t *testing.T) {
+	req, err := http.NewRequest(tcase.reqMethod, tcase.reqPath, tcase.reqBody)
+	req.Header = tcase.reqHeader
+	if err != nil {
+		panic(err)
+	}
+	tcase.testApp.wordbubbles = tcase.wordbubbleService
+	tcase.testApp.users = tcase.userService
+	tcase.testApp.auth = tcase.authService
+	w := &TestWriter{}
+	tcase.operation(w, req)
+	assert.Equal(t, tcase.respBody, w.respBody)
+	assert.Equal(t, tcase.respStatusCode, w.statusCode)
+}
 
 func NewTestApp() *app {
 	return &app{
@@ -18,6 +35,10 @@ func NewTestApp() *app {
 }
 
 type TestCase struct {
+	testApp   *app
+	operation func(w http.ResponseWriter, r *http.Request)
+
+	reqPath   string
 	reqBody   io.Reader
 	reqMethod string
 	reqHeader http.Header
