@@ -13,7 +13,7 @@ func Test_HappyPath(t *testing.T) {
 	tokenStr, userId, issuedAt := "im.a.token", int64(56), int64(234)
 
 	// A user signs up or logins in. Refresh token is saved after being generated
-	token := &refreshToken{
+	token := &RefreshToken{
 		string:   tokenStr,
 		userId:   userId,
 		issuedAt: issuedAt,
@@ -22,7 +22,7 @@ func Test_HappyPath(t *testing.T) {
 	assert.NoError(t, err)
 
 	// A little while later a user needs to validate their refresh token to get a new access token
-	token = &refreshToken{
+	token = &RefreshToken{
 		string: tokenStr,
 		userId: userId,
 	}
@@ -44,7 +44,7 @@ func Test_HappyPath(t *testing.T) {
 	assert.Nil(t, token)
 
 	// malicious user tries to validate an old token
-	token = &refreshToken{
+	token = &RefreshToken{
 		string: tokenStr,
 		userId: userId,
 	}
@@ -58,7 +58,7 @@ func Test_NotSoHappyPath(t *testing.T) {
 
 	// db closed
 	repo.db.Close()
-	err := repo.storeRefreshToken(&refreshToken{})
+	err := repo.storeRefreshToken(&RefreshToken{})
 	assert.NotNil(t, err)
 	assert.Equal(t, resp.ErrCouldNotStoreRefreshToken.Error(), err.Error())
 

@@ -2,6 +2,7 @@ package app
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
 	"strings"
 
@@ -18,11 +19,11 @@ import (
 // @Produce     json
 // @Security    ApiKeyAuth
 // @Param       Wordbubble body     req.WordbubbleRequest true "Wordbubble containing the text to be stored"
-// @Success     200        {object} resp.PushResponse
+// @Success     201        {object} resp.PushResponse
 // @Failure     405        {object} resp.StatusMethodNotAllowed    "resp.ErrInvalidHttpMethod"
 // @Failure     400        {object} resp.StatusBadRequest          "resp.ErrParseWordbubble, InvalidWordbubble"
 // @Failure     409        {object} resp.StatusConflict            "resp.ErrMaxAmountOfWordbubblesReached"
-// @Failure     401        {object} resp.StatusUnauthorized        "resp.ErrUnauthorized, resp.ErrInvalidTokenSignature"
+// @Failure     401        {object} resp.StatusUnauthorized        "resp.ErrUnauthorized, resp.ErrInvalidTokenSignature, resp.ErrTokenIsExpired"
 // @Failure     500        {object} resp.StatusInternalServerError "resp.UnknownError"
 // @Router      /push [post]
 func (wb *app) Push(w http.ResponseWriter, r *http.Request) {
@@ -44,13 +45,13 @@ func (wb *app) Push(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var wordbubble req.WordbubbleRequest // finally we are authenticated! Let's insert a wordbubble
-	if err = json.NewDecoder(r.Body).Decode(&wordbubble); err != nil {
-		wb.errorResponse(resp.ErrParseWordbubble, w)
+	wordbubble, err := getWordbubbleRequestFromBody(r.Body)
+	if err != nil {
+		wb.errorResponse(err, w)
 		return
 	}
 
-	err = wb.wordbubbles.AddNewWordbubble(userId, &wordbubble)
+	err = wb.wordbubbles.AddNewWordbubble(userId, wordbubble)
 	if err != nil {
 		wb.errorResponse(err, w)
 		return
@@ -58,6 +59,14 @@ func (wb *app) Push(w http.ResponseWriter, r *http.Request) {
 	resp := &resp.PushResponse{
 		Message: "thank you!",
 	}
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(resp)
+}
+
+func getWordbubbleRequestFromBody(body io.Reader) (*req.WordbubbleRequest, error) {
+	var wordbubble req.WordbubbleRequest
+	if err := json.NewDecoder(body).Decode(&wordbubble); err != nil {
+		return nil, resp.ErrParseWordbubble
+	}
+	return &wordbubble, nil
 }

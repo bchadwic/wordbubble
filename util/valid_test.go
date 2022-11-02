@@ -63,7 +63,7 @@ func Test_ValidUsername(t *testing.T) {
 		},
 		"invalid, not long enough": {
 			username:    "",
-			expectedErr: resp.ErrUsernameIsNotLongEnough,
+			expectedErr: resp.ErrUsernameIsMissing,
 		},
 		"invalid, spaces": {
 			username:    "b e n",

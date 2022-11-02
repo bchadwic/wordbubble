@@ -2,6 +2,7 @@ package wb
 
 import (
 	"github.com/bchadwic/wordbubble/model/req"
+	"github.com/bchadwic/wordbubble/model/resp"
 )
 
 const (
@@ -19,7 +20,7 @@ type WordbubbleService interface {
 	AddNewWordbubble(userId int64, wb *req.WordbubbleRequest) error
 	// RemoveAndReturnLatestWordbubbleForUserId remove and returns the latest wordbubble for the user specified.
 	// *req.Wordbubble may be nil if none were found in the data source.
-	RemoveAndReturnLatestWordbubbleForUserId(userId int64) *req.WordbubbleRequest
+	RemoveAndReturnLatestWordbubbleForUserId(userId int64) *resp.WordbubbleResponse
 }
 
 // WordbubbleRepo is the interface that the
@@ -30,5 +31,5 @@ type WordbubbleRepo interface {
 	addNewWordbubble(userId int64, wb *req.WordbubbleRequest) error
 	// removeAndReturnLatestWordbubbleForUserId remove and returns the latest wordbubble for the user specified, could be nil
 	// *req.Wordbubble may be nil if none were found in the data source.
-	removeAndReturnLatestWordbubbleForUserId(userId int64) *req.WordbubbleRequest
+	removeAndReturnLatestWordbubbleForUserId(userId int64) *resp.WordbubbleResponse
 }

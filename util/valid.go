@@ -48,7 +48,7 @@ func ValidUsername(username string) error {
 	if len(username) > maxUsernameLength {
 		return resp.ErrUsernameIsTooLong
 	} else if len(username) == 0 {
-		return resp.ErrUsernameIsNotLongEnough
+		return resp.ErrUsernameIsMissing
 	}
 	for _, c := range username {
 		if unicode.IsLetter(c) || unicode.IsNumber(c) || c == '_' {

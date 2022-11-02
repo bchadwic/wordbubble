@@ -14,11 +14,11 @@ type authService struct {
 	repo  AuthRepo
 }
 
-type refreshToken struct {
+type RefreshToken struct {
 	string
 	issuedAt int64
 	userId   int64
-	nearEOL  bool
+	NearEOL  bool
 }
 
 func NewAuthService(cfg cfg.Config, repo AuthRepo) *authService {
@@ -45,7 +45,7 @@ func (svc *authService) GenerateRefreshToken(userId int64) (string, error) {
 	return token.string, nil
 }
 
-func (svc *authService) ValidateRefreshToken(token *refreshToken) (err error) {
+func (svc *authService) ValidateRefreshToken(token *RefreshToken) (err error) {
 	if err = svc.checkRefreshTokenExpiry(token); err != nil {
 		return
 	}
@@ -56,22 +56,22 @@ func (svc *authService) ValidateRefreshToken(token *refreshToken) (err error) {
 }
 
 // sets EOL flag for token; returns error if token is expired
-func (svc *authService) checkRefreshTokenExpiry(token *refreshToken) error {
+func (svc *authService) checkRefreshTokenExpiry(token *RefreshToken) error {
 	if timeLeft := refreshTokenTimeLimit - (svc.timer.Now().Unix() - token.issuedAt); timeLeft < ImminentExpirationWindow {
-		token.nearEOL = true
+		token.NearEOL = true
 		if timeLeft <= 0 {
-			return resp.ErrRefreshTokenIsExpired
+			return resp.ErrTokenIsExpired
 		}
 	}
 	return nil
 }
 
-func RefreshTokenFromTokenString(tokenStr string) (*refreshToken, error) {
+func RefreshTokenFromTokenString(tokenStr string) (*RefreshToken, error) {
 	claims, err := util.ParseWithClaims(tokenStr)
 	if err != nil {
 		return nil, resp.ErrParseRefreshToken
 	}
-	return &refreshToken{
+	return &RefreshToken{
 		string:   tokenStr,
 		userId:   claims.UserId,
 		issuedAt: claims.IssuedAt,
@@ -79,11 +79,11 @@ func RefreshTokenFromTokenString(tokenStr string) (*refreshToken, error) {
 }
 
 // returns true if this token is near the expiration time
-func (tkn *refreshToken) IsNearEndOfLife() bool {
-	return tkn.nearEOL
+func (tkn *RefreshToken) IsNearEndOfLife() bool {
+	return tkn.NearEOL
 }
 
 // returns the user id stored inside the token
-func (tkn *refreshToken) UserId() int64 {
+func (tkn *RefreshToken) UserId() int64 {
 	return tkn.userId
 }
