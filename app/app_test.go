@@ -72,6 +72,7 @@ func (tr *TestWriter) WriteHeader(statusCode int) {
 }
 
 type TestAuthService struct {
+	TokenIsNearEOL             bool
 	GenerateAccessTokenString  string
 	GenerateRefreshTokenString string
 	GenerateRefreshTokenError  error
@@ -87,6 +88,7 @@ func (tas *TestAuthService) GenerateRefreshToken(userId int64) (string, error) {
 }
 
 func (tas *TestAuthService) ValidateRefreshToken(token *auth.RefreshToken) error {
+	token.NearEOL = tas.TokenIsNearEOL
 	return tas.ValidateRefreshTokenError
 }
 

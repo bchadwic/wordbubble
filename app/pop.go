@@ -15,7 +15,7 @@ import (
 // @Tags        wordbubble
 // @Accept      json
 // @Produce     json
-// @Param       UnauthenticatedUser body     req.PopUserRequest                  true "Username or email that the wordbubble will come from"
+// @Param       UnauthenticatedUser body     req.PopUserRequest             true "Username or email that the wordbubble will come from"
 // @Success     200                 {object} resp.WordbubbleResponse        "Latest Wordbubble for user passed"
 // @Success     201                 {object} resp.StatusNoContent           "resp.ErrNoWordbubble"
 // @Failure     405                 {object} resp.StatusMethodNotAllowed    "resp.ErrInvalidHttpMethod"

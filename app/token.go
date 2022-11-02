@@ -17,9 +17,9 @@ import (
 // @Produce     json
 // @Param       Token body     req.RefreshTokenRequest true "Valid refresh token to gain a new access token"
 // @Success     200   {object} resp.TokenResponse
-// @Failure     400   {object} resp.StatusBadRequest       "resp.ErrParseRefreshToken"
-// @Failure     401   {object} resp.StatusUnauthorized     "resp.ErrTokenIsExpired, resp.ErrCouldNotValidateRefreshToken"
-// @Failure     405   {object} resp.StatusMethodNotAllowed "resp.ErrInvalidHttpMethod"
+// @Failure     400   {object} resp.StatusBadRequest          "resp.ErrParseRefreshToken"
+// @Failure     401   {object} resp.StatusUnauthorized        "resp.ErrTokenIsExpired, resp.ErrCouldNotValidateRefreshToken"
+// @Failure     405   {object} resp.StatusMethodNotAllowed    "resp.ErrInvalidHttpMethod"
 // @Failure     500   {object} resp.StatusInternalServerError "resp.ErrCouldNotStoreRefreshToken"
 // @Router      /token [post]
 func (wb *app) Token(w http.ResponseWriter, r *http.Request) {

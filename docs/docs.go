@@ -56,7 +56,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "resp.ErrParseUser, resp.ErrUnknownUser, resp.ErrCouldNotDetermineUserType",
+                        "description": "resp.ErrParseUser, resp.ErrNoPassword, resp.ErrNoUser, resp.ErrUnknownUser, resp.ErrCouldNotDetermineUserType",
                         "schema": {
                             "$ref": "#/definitions/resp.StatusBadRequest"
                         }
@@ -120,7 +120,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "resp.ErrParseUser, resp.ErrUnknownUser, resp.ErrCouldNotDetermineUserType",
+                        "description": "resp.ErrParseUser, resp.ErrNoUser, resp.ErrUnknownUser, resp.ErrCouldNotDetermineUserType",
                         "schema": {
                             "$ref": "#/definitions/resp.StatusBadRequest"
                         }
@@ -176,8 +176,8 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
+                    "201": {
+                        "description": "Created",
                         "schema": {
                             "$ref": "#/definitions/resp.PushResponse"
                         }
@@ -189,7 +189,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "resp.ErrUnauthorized, resp.ErrInvalidTokenSignature",
+                        "description": "resp.ErrUnauthorized, resp.ErrInvalidTokenSignature, resp.ErrTokenIsExpired",
                         "schema": {
                             "$ref": "#/definitions/resp.StatusUnauthorized"
                         }

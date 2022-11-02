@@ -18,7 +18,7 @@ type RefreshToken struct {
 	string
 	issuedAt int64
 	userId   int64
-	nearEOL  bool
+	NearEOL  bool
 }
 
 func NewAuthService(cfg cfg.Config, repo AuthRepo) *authService {
@@ -58,7 +58,7 @@ func (svc *authService) ValidateRefreshToken(token *RefreshToken) (err error) {
 // sets EOL flag for token; returns error if token is expired
 func (svc *authService) checkRefreshTokenExpiry(token *RefreshToken) error {
 	if timeLeft := refreshTokenTimeLimit - (svc.timer.Now().Unix() - token.issuedAt); timeLeft < ImminentExpirationWindow {
-		token.nearEOL = true
+		token.NearEOL = true
 		if timeLeft <= 0 {
 			return resp.ErrTokenIsExpired
 		}
@@ -80,7 +80,7 @@ func RefreshTokenFromTokenString(tokenStr string) (*RefreshToken, error) {
 
 // returns true if this token is near the expiration time
 func (tkn *RefreshToken) IsNearEndOfLife() bool {
-	return tkn.nearEOL
+	return tkn.NearEOL
 }
 
 // returns the user id stored inside the token

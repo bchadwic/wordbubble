@@ -15,7 +15,7 @@ import (
 // @Tags        auth
 // @Accept      json
 // @Produce     json
-// @Param       User body     req.LoginUserRequest                true "Credentials used to authenticate a user"
+// @Param       User body     req.LoginUserRequest           true "Credentials used to authenticate a user"
 // @Success     200  {object} resp.TokenResponse             "Valid access and refresh tokens for user"
 // @Failure     405  {object} resp.StatusMethodNotAllowed    "resp.ErrInvalidHttpMethod"
 // @Failure     400  {object} resp.StatusBadRequest          "resp.ErrParseUser, resp.ErrNoPassword, resp.ErrNoUser, resp.ErrUnknownUser, resp.ErrCouldNotDetermineUserType"
