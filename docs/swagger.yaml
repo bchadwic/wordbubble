@@ -162,7 +162,8 @@ paths:
           schema:
             $ref: '#/definitions/resp.TokenResponse'
         "400":
-          description: resp.ErrParseUser, resp.ErrUnknownUser, resp.ErrCouldNotDetermineUserType
+          description: resp.ErrParseUser, resp.ErrNoPassword, resp.ErrNoUser, resp.ErrUnknownUser,
+            resp.ErrCouldNotDetermineUserType
           schema:
             $ref: '#/definitions/resp.StatusBadRequest'
         "401":
@@ -204,7 +205,7 @@ paths:
           schema:
             $ref: '#/definitions/resp.StatusNoContent'
         "400":
-          description: resp.ErrParseUser, resp.ErrUnknownUser, resp.ErrCouldNotDetermineUserType
+          description: resp.ErrParseUser, resp.ErrNoUser, resp.ErrUnknownUser, resp.ErrCouldNotDetermineUserType
           schema:
             $ref: '#/definitions/resp.StatusBadRequest'
         "401":
@@ -237,8 +238,8 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
+        "201":
+          description: Created
           schema:
             $ref: '#/definitions/resp.PushResponse'
         "400":
@@ -246,7 +247,7 @@ paths:
           schema:
             $ref: '#/definitions/resp.StatusBadRequest'
         "401":
-          description: resp.ErrUnauthorized, resp.ErrInvalidTokenSignature
+          description: resp.ErrUnauthorized, resp.ErrInvalidTokenSignature, resp.ErrTokenIsExpired
           schema:
             $ref: '#/definitions/resp.StatusUnauthorized'
         "405":
@@ -327,7 +328,7 @@ paths:
           schema:
             $ref: '#/definitions/resp.StatusBadRequest'
         "401":
-          description: resp.ErrRefreshTokenIsExpired, resp.ErrCouldNotValidateRefreshToken
+          description: resp.ErrTokenIsExpired, resp.ErrCouldNotValidateRefreshToken
           schema:
             $ref: '#/definitions/resp.StatusUnauthorized'
         "405":

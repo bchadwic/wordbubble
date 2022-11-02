@@ -22,7 +22,7 @@ func GenerateSignedToken(iat, exp, userId int64) string {
 
 func GetUserIdFromTokenString(tokenStr string) (int64, error) {
 	if tokenClaims, err := ParseWithClaims(tokenStr); err != nil {
-		return 0, resp.ErrInvalidTokenSignature
+		return 0, err
 	} else {
 		return tokenClaims.UserId, nil
 	}
@@ -30,8 +30,14 @@ func GetUserIdFromTokenString(tokenStr string) (int64, error) {
 
 func ParseWithClaims(tokenStr string) (*model.TokenClaims, error) {
 	var tokenClaims model.TokenClaims
-	_, err := jwt.ParseWithClaims(tokenStr, &tokenClaims, func(t *jwt.Token) (interface{}, error) {
+	token, _ := jwt.ParseWithClaims(tokenStr, &tokenClaims, func(t *jwt.Token) (interface{}, error) {
 		return SigningKey(), nil
 	})
-	return &tokenClaims, err
+	if token != nil {
+		if !token.Valid {
+			return nil, resp.ErrTokenIsExpired
+		}
+		return &tokenClaims, nil
+	}
+	return nil, resp.ErrInvalidTokenSignature
 }

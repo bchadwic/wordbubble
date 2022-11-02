@@ -34,9 +34,9 @@ func (repo *wordBubbleRepo) addNewWordbubble(userId int64, wb *req.WordbubbleReq
 	return nil
 }
 
-func (repo *wordBubbleRepo) removeAndReturnLatestWordbubbleForUserId(userId int64) *req.WordbubbleRequest {
+func (repo *wordBubbleRepo) removeAndReturnLatestWordbubbleForUserId(userId int64) *resp.WordbubbleResponse {
 	row := repo.db.QueryRow(RemoveAndReturnLatestWordbubbleForUserId, userId)
-	var wordbubble req.WordbubbleRequest
+	var wordbubble resp.WordbubbleResponse
 	if err := row.Scan(&wordbubble.Text); err != nil {
 		repo.log.Error("could not map db wordbubble text for user: %d, error: %s", userId, err)
 		return nil

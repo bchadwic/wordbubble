@@ -3,6 +3,7 @@ package wb
 import (
 	cfg "github.com/bchadwic/wordbubble/internal/config"
 	"github.com/bchadwic/wordbubble/model/req"
+	"github.com/bchadwic/wordbubble/model/resp"
 	"github.com/bchadwic/wordbubble/util"
 )
 
@@ -25,6 +26,6 @@ func (svc *wordBubbleService) AddNewWordbubble(userId int64, wb *req.WordbubbleR
 	return svc.repo.addNewWordbubble(userId, wb)
 }
 
-func (svc *wordBubbleService) RemoveAndReturnLatestWordbubbleForUserId(userId int64) *req.WordbubbleRequest {
+func (svc *wordBubbleService) RemoveAndReturnLatestWordbubbleForUserId(userId int64) *resp.WordbubbleResponse {
 	return svc.repo.removeAndReturnLatestWordbubbleForUserId(userId)
 }

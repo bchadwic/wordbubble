@@ -28,7 +28,7 @@ type testTimer struct {
 	tick <-chan t.Time
 }
 
-func Unix(ti int64) *testTimer {
+func TestTimerFromUnix(ti int64) *testTimer {
 	return &testTimer{
 		now: t.Unix(ti, 0),
 	}
