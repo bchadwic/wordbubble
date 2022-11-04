@@ -1,6 +1,7 @@
 package app
 
 import (
+	"encoding/json"
 	"net/http"
 
 	cfg "github.com/bchadwic/wordbubble/internal/config"
@@ -44,30 +45,30 @@ func (wb *app) errorResponse(err error, w http.ResponseWriter) {
 	case *resp.StatusNoContent:
 		wb.log.Warn("%d - %s", t.Code, t.Error())
 		w.WriteHeader(t.Code)
-		w.Write([]byte(t.Message))
+		json.NewEncoder(w).Encode(t)
 	case *resp.StatusBadRequest:
 		wb.log.Warn("%d - %s", t.Code, t.Error())
 		w.WriteHeader(t.Code)
-		w.Write([]byte(t.Message))
+		json.NewEncoder(w).Encode(t)
 	case *resp.StatusUnauthorized:
 		wb.log.Warn("%d - %s", t.Code, t.Error())
 		w.WriteHeader(t.Code)
-		w.Write([]byte(t.Message))
+		json.NewEncoder(w).Encode(t)
 	case *resp.StatusMethodNotAllowed:
 		wb.log.Warn("%d - %s", t.Code, t.Error())
 		w.WriteHeader(t.Code)
-		w.Write([]byte(t.Message))
+		json.NewEncoder(w).Encode(t)
 	case *resp.StatusConflict:
 		wb.log.Warn("%d - %s", t.Code, t.Error())
 		w.WriteHeader(t.Code)
-		w.Write([]byte(t.Message))
+		json.NewEncoder(w).Encode(t)
 	case *resp.StatusInternalServerError:
 		wb.log.Warn("%d - %s", t.Code, t.Error())
 		w.WriteHeader(t.Code)
-		w.Write([]byte(t.Message))
+		json.NewEncoder(w).Encode(t)
 	default:
 		wb.log.Error("%d - %s", http.StatusInternalServerError, err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(resp.Unknown)
+		json.NewEncoder(w).Encode(t)
 	}
 }

@@ -1,8 +1,9 @@
 package app
 
 import (
-	"io"
+	"encoding/json"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/bchadwic/wordbubble/internal/service/auth"
@@ -14,7 +15,7 @@ import (
 )
 
 func (tcase *TestCase) HttpRequestTest(t *testing.T) {
-	req, err := http.NewRequest(tcase.reqMethod, tcase.reqPath, tcase.reqBody)
+	req, err := http.NewRequest(tcase.reqMethod, tcase.reqPath, strings.NewReader(tcase.reqBody))
 	req.Header = tcase.reqHeader
 	if err != nil {
 		panic(err)
@@ -28,6 +29,14 @@ func (tcase *TestCase) HttpRequestTest(t *testing.T) {
 	assert.Equal(t, tcase.respStatusCode, w.statusCode)
 }
 
+func structToJson(s any) string {
+	b, err := json.Marshal(s)
+	if err != nil {
+		panic(err)
+	}
+	return string(b) + "\n"
+}
+
 func NewTestApp() *app {
 	return &app{
 		log: util.TestLogger(),
@@ -39,7 +48,7 @@ type TestCase struct {
 	operation func(w http.ResponseWriter, r *http.Request)
 
 	reqPath   string
-	reqBody   io.Reader
+	reqBody   string
 	reqMethod string
 	reqHeader http.Header
 
