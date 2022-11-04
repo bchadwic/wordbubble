@@ -3,7 +3,6 @@ package app
 import (
 	"fmt"
 	"net/http"
-	"strings"
 	"testing"
 
 	"github.com/bchadwic/wordbubble/model/resp"
@@ -16,7 +15,7 @@ func Test_Token(t *testing.T) {
 	}
 	tests := map[string]TestCase{
 		"valid, refresh token is near end of life": {
-			reqBody:        strings.NewReader(`{"refresh_token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjkyMjMzNzIwMzY4NTQ3NzU4MDcsInVzZXJfaWQiOjJ9.PdKS3GZkc1LDMyJhZMP0CIkTUDUIXxcvQP0jwOkygO8"}`),
+			reqBody:        `{"refresh_token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjkyMjMzNzIwMzY4NTQ3NzU4MDcsInVzZXJfaWQiOjJ9.PdKS3GZkc1LDMyJhZMP0CIkTUDUIXxcvQP0jwOkygO8"}`,
 			respBody:       fmt.Sprintln(`{"access_token":"aaa.bbb.ccc","refresh_token":"ddd.eee.fff"}`),
 			respStatusCode: http.StatusOK,
 			reqMethod:      http.MethodPost,
@@ -27,7 +26,7 @@ func Test_Token(t *testing.T) {
 			},
 		},
 		"valid, refresh token is not at end of life": {
-			reqBody:        strings.NewReader(`{"refresh_token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjkyMjMzNzIwMzY4NTQ3NzU4MDcsInVzZXJfaWQiOjJ9.PdKS3GZkc1LDMyJhZMP0CIkTUDUIXxcvQP0jwOkygO8"}`),
+			reqBody:        `{"refresh_token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjkyMjMzNzIwMzY4NTQ3NzU4MDcsInVzZXJfaWQiOjJ9.PdKS3GZkc1LDMyJhZMP0CIkTUDUIXxcvQP0jwOkygO8"}`,
 			respBody:       fmt.Sprintln(`{"access_token":"aaa.bbb.ccc"}`),
 			respStatusCode: http.StatusOK,
 			reqMethod:      http.MethodPost,
@@ -36,8 +35,8 @@ func Test_Token(t *testing.T) {
 			},
 		},
 		"invalid, database couldn't validate the token": {
-			reqBody:        strings.NewReader(`{"refresh_token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjkyMjMzNzIwMzY4NTQ3NzU4MDcsInVzZXJfaWQiOjJ9.PdKS3GZkc1LDMyJhZMP0CIkTUDUIXxcvQP0jwOkygO8"}`),
-			respBody:       resp.ErrCouldNotValidateRefreshToken.Message,
+			reqBody:        `{"refresh_token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjkyMjMzNzIwMzY4NTQ3NzU4MDcsInVzZXJfaWQiOjJ9.PdKS3GZkc1LDMyJhZMP0CIkTUDUIXxcvQP0jwOkygO8"}`,
+			respBody:       structToJson(resp.ErrCouldNotValidateRefreshToken),
 			respStatusCode: resp.ErrCouldNotValidateRefreshToken.Code,
 			reqMethod:      http.MethodPost,
 			authService: &TestAuthService{
@@ -45,19 +44,19 @@ func Test_Token(t *testing.T) {
 			},
 		},
 		"invalid, empty token": {
-			reqBody:        strings.NewReader(`{"refresh_token":""}`),
-			respBody:       resp.ErrParseRefreshToken.Message,
+			reqBody:        `{"refresh_token":""}`,
+			respBody:       structToJson(resp.ErrParseRefreshToken),
 			respStatusCode: resp.ErrParseRefreshToken.Code,
 			reqMethod:      http.MethodPost,
 		},
 		"invalid, no body": {
-			reqBody:        strings.NewReader(``),
-			respBody:       resp.ErrParseRefreshToken.Message,
+			reqBody:        ``,
+			respBody:       structToJson(resp.ErrParseRefreshToken),
 			respStatusCode: resp.ErrParseRefreshToken.Code,
 			reqMethod:      http.MethodPost,
 		},
 		"invalid, GET http method": {
-			respBody:       resp.ErrInvalidHttpMethod.Message,
+			respBody:       structToJson(resp.ErrInvalidHttpMethod),
 			respStatusCode: resp.ErrInvalidHttpMethod.Code,
 			reqMethod:      http.MethodGet,
 		},

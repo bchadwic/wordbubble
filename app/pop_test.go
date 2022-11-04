@@ -3,7 +3,6 @@ package app
 import (
 	"fmt"
 	"net/http"
-	"strings"
 	"testing"
 
 	"github.com/bchadwic/wordbubble/model"
@@ -13,7 +12,7 @@ import (
 func Test_Pop(t *testing.T) {
 	tests := map[string]TestCase{
 		"valid": {
-			reqBody:        strings.NewReader(`{"user":"ben"}`),
+			reqBody:        `{"user":"ben"}`,
 			respBody:       fmt.Sprintln(`{"text":"hello world"}`),
 			respStatusCode: http.StatusOK,
 			reqMethod:      http.MethodDelete,
@@ -27,8 +26,8 @@ func Test_Pop(t *testing.T) {
 			},
 		},
 		"invalid, no wordbubble found": {
-			reqBody:        strings.NewReader(`{"user":"ben"}`),
-			respBody:       resp.ErrNoWordbubble.Message,
+			reqBody:        `{"user":"ben"}`,
+			respBody:       structToJson(resp.ErrNoWordbubble),
 			respStatusCode: resp.ErrNoWordbubble.Code,
 			reqMethod:      http.MethodDelete,
 			userService: &TestUserService{
@@ -37,8 +36,8 @@ func Test_Pop(t *testing.T) {
 			wordbubbleService: &TestWordbubbleService{},
 		},
 		"invalid, couldn't find the user": {
-			reqBody:        strings.NewReader(`{"user":"ben"}`),
-			respBody:       resp.ErrUnknownUser.Message,
+			reqBody:        `{"user":"ben"}`,
+			respBody:       structToJson(resp.ErrUnknownUser),
 			respStatusCode: resp.ErrUnknownUser.Code,
 			reqMethod:      http.MethodDelete,
 			userService: &TestUserService{
@@ -46,19 +45,19 @@ func Test_Pop(t *testing.T) {
 			},
 		},
 		"invalid, no user": {
-			reqBody:        strings.NewReader(`{}`),
-			respBody:       resp.ErrNoUser.Message,
+			reqBody:        `{}`,
+			respBody:       structToJson(resp.ErrNoUser),
 			respStatusCode: resp.ErrNoUser.Code,
 			reqMethod:      http.MethodDelete,
 		},
 		"invalid, could not parse body": {
-			reqBody:        strings.NewReader(`what's goin' on here?`),
-			respBody:       resp.ErrParseUser.Message,
+			reqBody:        `what's goin' on here?`,
+			respBody:       structToJson(resp.ErrParseUser),
 			respStatusCode: resp.ErrParseUser.Code,
 			reqMethod:      http.MethodDelete,
 		},
 		"invalid, GET http method": {
-			respBody:       resp.ErrInvalidHttpMethod.Message,
+			respBody:       structToJson(resp.ErrInvalidHttpMethod),
 			respStatusCode: resp.ErrInvalidHttpMethod.Code,
 			reqMethod:      http.MethodGet,
 		},

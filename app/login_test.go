@@ -3,7 +3,6 @@ package app
 import (
 	"fmt"
 	"net/http"
-	"strings"
 	"testing"
 
 	"github.com/bchadwic/wordbubble/model"
@@ -13,7 +12,7 @@ import (
 func Test_Login(t *testing.T) {
 	tests := map[string]TestCase{
 		"valid": {
-			reqBody:        strings.NewReader(`{"user":"ben","password":"SomePassword123"}`),
+			reqBody:        `{"user":"ben","password":"SomePassword123"}`,
 			respBody:       fmt.Sprintln(`{"access_token":"test.access.token","refresh_token":"test.refresh.token"}`),
 			respStatusCode: http.StatusOK,
 			reqMethod:      http.MethodPost,
@@ -26,8 +25,8 @@ func Test_Login(t *testing.T) {
 			},
 		},
 		"invalid, auth service couldn't store a refresh token ": {
-			reqBody:        strings.NewReader(`{"user":"ben","password":"SomePassword123"}`),
-			respBody:       resp.ErrCouldNotStoreRefreshToken.Message,
+			reqBody:        `{"user":"ben","password":"SomePassword123"}`,
+			respBody:       structToJson(resp.ErrCouldNotStoreRefreshToken),
 			respStatusCode: resp.ErrCouldNotStoreRefreshToken.Code,
 			reqMethod:      http.MethodPost,
 			userService: &TestUserService{
@@ -38,8 +37,8 @@ func Test_Login(t *testing.T) {
 			},
 		},
 		"invalid, user service couldn't find user": {
-			reqBody:        strings.NewReader(`{"user":"*234olj2kx.s","password":"SomePassword123"}`),
-			respBody:       resp.ErrCouldNotDetermineUserType.Message,
+			reqBody:        `{"user":"*234olj2kx.s","password":"SomePassword123"}`,
+			respBody:       structToJson(resp.ErrCouldNotDetermineUserType),
 			respStatusCode: resp.ErrCouldNotDetermineUserType.Code,
 			reqMethod:      http.MethodPost,
 			userService: &TestUserService{
@@ -47,25 +46,25 @@ func Test_Login(t *testing.T) {
 			},
 		},
 		"invalid, missing password": {
-			reqBody:        strings.NewReader(`{"user":"ben"}`),
-			respBody:       resp.ErrNoPassword.Message,
+			reqBody:        `{"user":"ben"}`,
+			respBody:       structToJson(resp.ErrNoPassword),
 			respStatusCode: resp.ErrNoPassword.Code,
 			reqMethod:      http.MethodPost,
 		},
 		"invalid, missing user": {
-			reqBody:        strings.NewReader(`{"password":"SomePassword123"}`),
-			respBody:       resp.ErrNoUser.Message,
+			reqBody:        `{"password":"SomePassword123"}`,
+			respBody:       structToJson(resp.ErrNoUser),
 			respStatusCode: resp.ErrNoUser.Code,
 			reqMethod:      http.MethodPost,
 		},
 		"invalid, bad body": {
-			reqBody:        strings.NewReader(`howdy!`),
-			respBody:       resp.ErrParseUser.Message,
+			reqBody:        `howdy!`,
+			respBody:       structToJson(resp.ErrParseUser),
 			respStatusCode: resp.ErrParseUser.Code,
 			reqMethod:      http.MethodPost,
 		},
 		"invalid, GET http method": {
-			respBody:       resp.ErrInvalidHttpMethod.Message,
+			respBody:       structToJson(resp.ErrInvalidHttpMethod),
 			respStatusCode: resp.ErrInvalidHttpMethod.Code,
 			reqMethod:      http.MethodGet,
 		},
