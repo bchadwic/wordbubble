@@ -62,11 +62,4 @@ func Test_NotSoHappyPath(t *testing.T) {
 	assert.Nil(t, user)
 	assert.NotNil(t, err)
 	assert.ErrorIs(t, resp.ErrSQLMappingError, err)
-
-	repo.db.Close()
-	// an error occurs while adding a user
-	id, err := repo.addUser(&model.User{})
-	assert.Equal(t, int64(0), id)
-	assert.NotNil(t, err)
-	assert.ErrorIs(t, resp.ErrCouldNotAddUser, err)
 }

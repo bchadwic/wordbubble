@@ -7,7 +7,7 @@ import (
 
 const (
 	maxAmountOfWordbubbles                   = 10
-	AddNewWordbubble                         = `INSERT INTO wordbubbles (user_id, text) SELECT $1, $2 WHERE (SELECT COUNT(*) from wordbubbles WHERE user_id = $3) < ?;`
+	AddNewWordbubble                         = `INSERT INTO wordbubbles (user_id, text) SELECT $1, $2 WHERE (SELECT COUNT(*) from wordbubbles WHERE user_id = $3) < $4;`
 	RemoveAndReturnLatestWordbubbleForUserId = `DELETE FROM wordbubbles WHERE wordbubble_id = (SELECT wordbubble_id FROM wordbubbles WHERE user_id = $1 ORDER BY created_timestamp ASC LIMIT 1) RETURNING text;`
 )
 

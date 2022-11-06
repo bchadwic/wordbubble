@@ -3,7 +3,7 @@ package user
 import "github.com/bchadwic/wordbubble/model"
 
 const (
-	AddUser                = `INSERT INTO users(username, email, password) VALUES ($1, $2, $3);`
+	AddUser                = `INSERT INTO users(username, email, password) VALUES ($1, $2, $3) RETURNING user_id;`
 	RetrieveUserByEmail    = `SELECT user_id, username, email, password FROM users WHERE email = $1`
 	RetrieveUserByUsername = `SELECT user_id, username, email, password FROM users WHERE username = $1`
 )

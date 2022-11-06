@@ -23,11 +23,15 @@ func NewUserRepo(cfg cfg.Config) *userRepo {
 }
 
 func (repo *userRepo) addUser(user *model.User) (int64, error) {
-	res, err := repo.db.Exec(AddUser, user.Username, user.Email, user.Password)
-	if err != nil {
-		return 0, resp.ErrCouldNotAddUser
+	row := repo.db.QueryRow(AddUser, user.Username, user.Email, user.Password)
+	var lastInsertedId int64
+	if err := row.Scan(&lastInsertedId); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, resp.ErrCouldNotAddUser
+		}
+		return 0, resp.ErrSQLMappingError
 	}
-	return res.LastInsertId()
+	return lastInsertedId, nil
 }
 
 func (repo *userRepo) retrieveUserByEmail(email string) (*model.User, error) {
