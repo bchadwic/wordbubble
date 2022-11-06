@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/bchadwic/wordbubble/util"
-	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -42,7 +42,7 @@ func NewConfig() *config {
 		log.Error("signing key is not set")
 		return nil
 	}
-	db, err := sql.Open("mysql", os.Getenv("DSN"))
+	db, err := sql.Open("postgres", os.Getenv("DSN"))
 	if err != nil {
 		log.Error("db creation failed: " + err.Error())
 		return nil

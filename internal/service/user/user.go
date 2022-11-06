@@ -3,9 +3,9 @@ package user
 import "github.com/bchadwic/wordbubble/model"
 
 const (
-	AddUser                = `INSERT INTO users(username, email, password) VALUES (?, ?, ?);`
-	RetrieveUserByEmail    = `SELECT user_id, username, email, password FROM users WHERE email = ?`
-	RetrieveUserByUsername = `SELECT user_id, username, email, password FROM users WHERE username = ?`
+	AddUser                = `INSERT INTO users(username, email, password) VALUES ($1, $2, $3);`
+	RetrieveUserByEmail    = `SELECT user_id, username, email, password FROM users WHERE email = $1`
+	RetrieveUserByUsername = `SELECT user_id, username, email, password FROM users WHERE username = $1`
 )
 
 // UserService is the interface that the application
