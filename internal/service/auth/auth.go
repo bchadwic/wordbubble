@@ -8,10 +8,10 @@ const (
 	RefreshTokenCleanerRate  = 30 * time.Second
 	ImminentExpirationWindow = int64(float64(refreshTokenTimeLimit) * .2) // TODO make better?
 
-	CleanupExpiredRefreshTokens = `DELETE FROM tokens WHERE issued_at < ?`
-	StoreRefreshToken           = `INSERT INTO tokens (user_id, refresh_token, issued_at) VALUES (?, ?, ?)`
-	ValidateRefreshToken        = `SELECT issued_at FROM tokens WHERE user_id = ? AND refresh_token = ?`
-	GetLatestRefreshToken       = `SELECT refresh_token, issued_at FROM tokens WHERE user_id = ? ORDER BY issued_at DESC LIMIT 1`
+	CleanupExpiredRefreshTokens = `DELETE FROM tokens WHERE issued_at < $1`
+	StoreRefreshToken           = `INSERT INTO tokens (user_id, refresh_token, issued_at) VALUES ($1, $2, $3)`
+	ValidateRefreshToken        = `SELECT issued_at FROM tokens WHERE user_id = $1 AND refresh_token = $2`
+	GetLatestRefreshToken       = `SELECT refresh_token, issued_at FROM tokens WHERE user_id = $1 ORDER BY issued_at DESC LIMIT 1`
 )
 
 // AuthService is the interface that the application
