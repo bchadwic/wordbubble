@@ -33,11 +33,12 @@ func NewApp(cfg cfg.Config, authService auth.AuthService, userService user.UserS
 // TODO make this entire file better
 func (wb *app) BackgroundCleaner(authCleaner auth.AuthCleaner) {
 	const refreshTokenTimeLimit = 60
-	go func() {
-		for range wb.timer.Tick(auth.RefreshTokenCleanerRate) {
-			_ = authCleaner.CleanupExpiredRefreshTokens(wb.timer.Now().Unix() - refreshTokenTimeLimit)
-		}
-	}()
+	return // fixme
+	// go func() {
+	// 	for range wb.timer.Tick(auth.RefreshTokenCleanerRate) {
+	// 		_ = authCleaner.CleanupExpiredRefreshTokens(wb.timer.Now().Unix() - refreshTokenTimeLimit)
+	// 	}
+	// }()
 }
 
 func (wb *app) errorResponse(err error, w http.ResponseWriter) {

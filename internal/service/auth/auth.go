@@ -3,7 +3,7 @@ package auth
 import "time"
 
 const (
-	refreshTokenTimeLimit    = 240
+	refreshTokenTimeLimit    = 36000 // 10 minutes
 	accessTokenTimeLimit     = 30 * time.Second
 	RefreshTokenCleanerRate  = 30 * time.Second
 	ImminentExpirationWindow = int64(float64(refreshTokenTimeLimit) * .2) // TODO make better?
